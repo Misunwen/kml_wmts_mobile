@@ -1003,61 +1003,127 @@
       });
     }
 
-    function createKmlLayerFromText(
-      fileName,
-      kmlText,
-      visible = true,
-      autoZoom = false,
-      shouldSave = true
-    ) {
-      const kmlFormat = new ol.format.KML({
-        extractStyles: true,
-        showPointNames: false
-      });
+function createKmlLayerFromText(
+  fileName,
+  kmlText,
+  visible = true,
+  autoZoom = false,
+  shouldSave = true
+) {
+  const kmlFormat = new ol.format.KML({
+    /*
+      保留 KML 原本的線、面樣式：
+      - 線的顏色與寬度
+      - 面是否填滿
+      - 面的顏色與透明度
+    */
+    extractStyles: true,
 
-      const features = kmlFormat.readFeatures(kmlText, {
-        dataProjection: "EPSG:4326",
-        featureProjection: "EPSG:3857"
-      });
+    /*
+      點位名稱由下面的 feature.setStyle() 處理。
+    */
+    showPointNames: false
+  });
 
-      if (!features || features.length === 0) {
-        throw new Error("沒有讀到可用的點、線或面圖徵。");
-      }
+  const features = kmlFormat.readFeatures(kmlText, {
+    dataProjection: "EPSG:4326",
+    featureProjection: "EPSG:3857"
+  });
 
-      const source = new ol.source.Vector({
-        features: features
-      });
+  if (!features || features.length === 0) {
+    throw new Error("沒有讀到可用的點、線或面圖徵。");
+  }
 
-      const vectorLayer = new ol.layer.Vector({
-        source: source,
-        visible: visible,
-        zIndex: 10 + kmlLayers.length
-      });
+  /*
+    僅覆蓋 Point / MultiPoint 的樣式。
 
-      const layerData = {
-        id: nextLayerId++,
-        name: fileName,
-        text: kmlText,
-        layer: vectorLayer,
-        source: source
-      };
+    LineString、Polygon 等其他圖徵不設定新樣式，
+    因此保留 KML 原本設定的線色、填滿或不填滿設定。
+  */
+  features.forEach(feature => {
+    const geometry = feature.getGeometry();
 
-      map.addLayer(vectorLayer);
-      kmlLayers.push(layerData);
-
-      updateKmlLayerZIndex();
-      renderLayerList();
-
-      if (autoZoom) {
-        zoomToLayer(layerData);
-      }
-
-      if (shouldSave) {
-        scheduleSaveMapState();
-      }
-
-      return layerData;
+    if (!geometry) {
+      return;
     }
+
+    const geometryType = geometry.getType();
+
+    if (geometryType === "Point" || geometryType === "MultiPoint") {
+      feature.setStyle(
+        new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 7,
+
+            fill: new ol.style.Fill({
+              color: "rgba(235, 40, 40, 0.95)"
+            }),
+
+            stroke: new ol.style.Stroke({
+              color: "#ffffff",
+              width: 2
+            })
+          }),
+
+          text: new ol.style.Text({
+            text: String(feature.get("name") || ""),
+            offsetY: -16,
+
+            font: "bold 13px Arial, Microsoft JhengHei, sans-serif",
+
+            fill: new ol.style.Fill({
+              color: "#202020"
+            }),
+
+            stroke: new ol.style.Stroke({
+              color: "#ffffff",
+              width: 3
+            })
+          })
+        })
+      );
+    }
+  });
+
+  const source = new ol.source.Vector({
+    features: features
+  });
+
+  /*
+    此處不要加入 style: function(feature) {...}
+    否則會覆蓋 KML 內原本的線、面樣式。
+  */
+  const vectorLayer = new ol.layer.Vector({
+    source: source,
+    visible: visible,
+    zIndex: 10 + kmlLayers.length
+  });
+
+  const layerData = {
+    id: nextLayerId++,
+    name: fileName,
+    text: kmlText,
+    layer: vectorLayer,
+    source: source
+  };
+
+  map.addLayer(vectorLayer);
+  kmlLayers.push(layerData);
+
+  updateKmlLayerZIndex();
+  renderLayerList();
+
+  if (autoZoom) {
+    zoomToLayer(layerData);
+  }
+
+  if (shouldSave) {
+    scheduleSaveMapState();
+  }
+
+  return layerData;
+}
+
 
     function renderLayerList() {
       layerListEl.innerHTML = "";
