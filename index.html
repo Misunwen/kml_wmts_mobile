@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -14,6 +15,7 @@
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css"
   >
+
   <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
 
   <style>
@@ -37,10 +39,11 @@
     #controlPanel {
       position: absolute;
       z-index: 1000;
+
       top: max(10px, env(safe-area-inset-top));
       left: max(10px, env(safe-area-inset-left));
 
-      width: 410px;
+      width: 430px;
       max-width: calc(100vw - 20px);
       max-height: calc(100vh - 20px);
 
@@ -61,7 +64,7 @@
       padding: 8px 10px 8px 13px;
       box-sizing: border-box;
 
-      color: #ffffff;
+      color: white;
       background: #1f5f99;
 
       cursor: pointer;
@@ -81,7 +84,7 @@
 
       color: white;
       background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.70);
       border-radius: 5px;
 
       font-size: 20px;
@@ -132,10 +135,12 @@
 
     button {
       padding: 7px 10px;
+
       color: #222;
       background: #fafafa;
       border: 1px solid #a9a9a9;
       border-radius: 5px;
+
       cursor: pointer;
     }
 
@@ -164,7 +169,7 @@
     }
 
     #locationBtn:hover {
-      background: #1f6231;
+      background: #1e6130;
     }
 
     #clearAllBtn,
@@ -180,7 +185,7 @@
     }
 
     #clearSavedDataBtn:hover {
-      background: #ffe9e9;
+      background: #ffe7e7;
     }
 
     .hint {
@@ -220,9 +225,9 @@
     .layerItem {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
 
-      min-height: 34px;
+      min-height: 38px;
       padding: 5px 2px;
       border-bottom: 1px solid #e7e7e7;
 
@@ -238,7 +243,7 @@
 
     .layerName {
       flex: 1;
-      min-width: 0;
+      min-width: 70px;
 
       overflow: hidden;
       text-overflow: ellipsis;
@@ -246,8 +251,22 @@
     }
 
     .layerItem button {
+      min-width: 30px;
       padding: 4px 6px;
       font-size: 12px;
+    }
+
+    .layerMoveBtn {
+      min-width: 28px !important;
+      padding: 4px 6px !important;
+      font-size: 16px !important;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .layerMoveBtn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
     #status {
@@ -296,12 +315,18 @@
       }
 
       .layerItem {
-        min-height: 40px;
+        min-height: 42px;
       }
 
       .layerItem button {
+        min-width: 34px;
         padding: 6px 7px;
         font-size: 13px;
+      }
+
+      .layerMoveBtn {
+        min-width: 32px !important;
+        font-size: 17px !important;
       }
     }
   </style>
@@ -310,6 +335,7 @@
 <body>
 
   <div id="controlPanel">
+
     <div id="panelHeader">
       <span id="panelTitle">KML 圖層與測繪中心底圖</span>
 
@@ -331,7 +357,7 @@
       </select>
 
       <div class="hint">
-        圖層清單由國土測繪中心 WMTS GetCapabilities 自動讀取。
+        WMTS 圖層清單由國土測繪中心 GetCapabilities 自動讀取。
       </div>
 
       <div class="sectionTitle">目前位置</div>
@@ -341,8 +367,7 @@
       </button>
 
       <div class="hint">
-        第一次使用時，請允許瀏覽器取得位置權限。<br>
-        GitHub Pages 使用 HTTPS，可支援手機 GPS 定位。
+        第一次使用時請允許瀏覽器使用位置資訊。
       </div>
 
       <div class="sectionTitle">載入本機 KML</div>
@@ -356,18 +381,18 @@
 
       <div class="hint">
         最多同時載入 10 個 KML。<br>
-        KML 僅在目前手機／電腦的瀏覽器內讀取，不會上傳。
+        KML 僅在本機瀏覽器讀取，不會上傳 GitHub。
       </div>
 
       <div class="sectionTitle">自動記錄</div>
 
       <label class="autoSaveRow">
         <input id="autoSaveCheckbox" type="checkbox" checked>
-        <span>記住底圖、KML 圖層與地圖位置</span>
+        <span>記住底圖、KML、圖層順序與地圖位置</span>
       </label>
 
       <div class="hint">
-        記錄資料保存在目前瀏覽器的 IndexedDB，不會上傳 GitHub。
+        記錄資料保存在目前裝置瀏覽器的 IndexedDB。
       </div>
 
       <div class="sectionTitle">我的 KML 圖層</div>
@@ -387,11 +412,11 @@
       </button>
 
       <div class="hint">
-        「清除快取資料」只會刪除瀏覽器保存的內容，<br>
-        不會刪除手機或電腦內原始的 KML 檔案。
+        清除快取不會刪除手機或電腦中的原始 KML 檔案。
       </div>
 
       <span id="status">地圖初始化中...</span>
+
     </div>
   </div>
 
@@ -400,31 +425,19 @@
   <script>
     "use strict";
 
-    /*
-      國土測繪中心新版 WMTS。
-
-      使用 GoogleMapsCompatible / EPSG:3857，
-      適合一般 Web、手機與 GPS 地圖使用。
-    */
+    /* 國土測繪中心新版 HTTPS WMTS */
     const WMTS_URL = "https://wmts.nlsc.gov.tw/wmts";
 
-    /*
-      最多同時載入 KML 圖層數。
-    */
+    /* 最多 KML 圖層數 */
     const MAX_KML_LAYERS = 10;
 
-    /*
-      IndexedDB 設定。
-    */
+    /* IndexedDB 設定 */
     const DB_NAME = "nlsc-kml-map-db";
     const DB_VERSION = 1;
     const STORE_NAME = "mapState";
     const STATE_KEY = "lastMapState";
 
-    /*
-      localStorage key：
-      只記錄「使用者是否開啟自動記錄」。
-    */
+    /* localStorage：記住自動記錄是否啟用 */
     const AUTO_SAVE_KEY = "nlsc-kml-map-auto-save";
 
     /* DOM */
@@ -444,7 +457,7 @@
 
     const statusEl = document.getElementById("status");
 
-    /* 全域狀態 */
+    /* 全域變數 */
     let database = null;
     let wmtsCapabilities = null;
     let wmtsLayer = null;
@@ -453,24 +466,15 @@
     let kmlLayers = [];
     let nextLayerId = 1;
 
-    /*
-      在初始化、還原資料時暫停自動儲存，
-      避免預設底圖 EMAP 蓋掉上次的記錄。
-    */
     let isRestoringSavedState = false;
-
-    /*
-      地圖移動時使用 debounce，
-      避免每拖曳一下就寫入 IndexedDB。
-    */
     let saveTimer = null;
 
-    /*
-      OpenLayers 地圖。
-    */
+    /* 建立地圖 */
     const map = new ol.Map({
       target: "map",
+
       layers: [],
+
       view: new ol.View({
         projection: "EPSG:3857",
         center: ol.proj.fromLonLat([120.9, 23.7]),
@@ -480,9 +484,9 @@
       })
     });
 
-    /* =========================================================
-       控制面板收合／展開
-       ========================================================= */
+    /* =====================================================
+       控制欄收合 / 展開
+       ===================================================== */
 
     function setPanelCollapsed(collapsed) {
       controlPanel.classList.toggle("collapsed", collapsed);
@@ -496,30 +500,27 @@
     function applyInitialPanelMode() {
       const isMobile = window.matchMedia("(max-width: 700px)").matches;
 
-      /*
-        手機預設收合；
-        電腦預設展開。
-      */
+      /* 手機預設收合，桌機預設展開 */
       setPanelCollapsed(isMobile);
     }
 
     togglePanelBtn.addEventListener("click", function (event) {
       event.stopPropagation();
 
-      const isCollapsed = controlPanel.classList.contains("collapsed");
-      setPanelCollapsed(!isCollapsed);
+      const collapsed = controlPanel.classList.contains("collapsed");
+      setPanelCollapsed(!collapsed);
     });
 
     panelHeader.addEventListener("click", function () {
-      const isCollapsed = controlPanel.classList.contains("collapsed");
-      setPanelCollapsed(!isCollapsed);
+      const collapsed = controlPanel.classList.contains("collapsed");
+      setPanelCollapsed(!collapsed);
     });
 
     applyInitialPanelMode();
 
-    /* =========================================================
-       IndexedDB：瀏覽器本機儲存
-       ========================================================= */
+    /* =====================================================
+       IndexedDB
+       ===================================================== */
 
     function openDatabase() {
       return new Promise((resolve, reject) => {
@@ -609,21 +610,19 @@
       });
     }
 
-    /* =========================================================
-       自動記錄設定
-       ========================================================= */
+    /* =====================================================
+       自動記錄
+       ===================================================== */
 
     function getAutoSaveEnabled() {
-      const savedValue = localStorage.getItem(AUTO_SAVE_KEY);
+      const value = localStorage.getItem(AUTO_SAVE_KEY);
 
-      /*
-        第一次使用時，預設打勾。
-      */
-      if (savedValue === null) {
+      /* 第一次使用預設啟用 */
+      if (value === null) {
         return true;
       }
 
-      return savedValue === "true";
+      return value === "true";
     }
 
     function setAutoSaveEnabled(enabled) {
@@ -632,23 +631,14 @@
 
     autoSaveCheckbox.checked = getAutoSaveEnabled();
 
-    /*
-      建立目前地圖狀態物件。
-    */
     function getCurrentMapState() {
       const view = map.getView();
 
       return {
         savedAt: new Date().toISOString(),
 
-        /*
-          WMTS 圖層代號，例如 EMAP、PHOTO2。
-        */
         wmtsLayer: wmtsLayerSelect.value || null,
 
-        /*
-          地圖視圖狀態。
-        */
         view: {
           center: view.getCenter() || null,
           zoom: view.getZoom() || 7,
@@ -656,7 +646,9 @@
         },
 
         /*
-          KML 原始文字、檔名、是否顯示。
+          kmlLayers 陣列順序：
+          index 0：最下層
+          最後一個：最上層
         */
         kmlLayers: kmlLayers.map(layerData => ({
           name: layerData.name,
@@ -684,17 +676,21 @@
         await dbSet(STATE_KEY, state);
 
       } catch (error) {
-        console.warn("儲存地圖狀態失敗：", error);
+        console.warn("儲存資料失敗：", error);
 
         if (error.name === "QuotaExceededError") {
           statusEl.textContent =
-            "KML 太大，瀏覽器本機儲存空間不足，無法自動記錄。";
+            "KML 太大，瀏覽器儲存空間不足，無法自動記錄。";
         }
       }
     }
 
     function scheduleSaveMapState() {
-      if (!autoSaveCheckbox.checked || isRestoringSavedState) {
+      if (!autoSaveCheckbox.checked) {
+        return;
+      }
+
+      if (isRestoringSavedState) {
         return;
       }
 
@@ -705,9 +701,6 @@
       }, 700);
     }
 
-    /*
-      地圖拖曳、縮放後記錄目前位置。
-    */
     map.on("moveend", function () {
       scheduleSaveMapState();
     });
@@ -717,29 +710,29 @@
 
       if (this.checked) {
         await saveCurrentMapState();
+
         statusEl.textContent = "已啟用自動記錄。";
 
       } else {
-        /*
-          關閉自動記錄時，刪除先前保存資料，
-          避免下次仍自動載入。
-        */
         try {
           await dbDelete(STATE_KEY);
-          statusEl.textContent = "已關閉自動記錄並清除已保存資料。";
+
+          statusEl.textContent =
+            "已關閉自動記錄並清除之前保存的資料。";
+
         } catch (error) {
           console.warn(error);
         }
       }
     });
 
-    /* =========================================================
+    /* =====================================================
        WMTS
-       ========================================================= */
+       ===================================================== */
 
     async function loadWmtsCapabilities(preferredLayerName = null) {
       try {
-        statusEl.textContent = "正在讀取測繪中心 WMTS 圖層清單...";
+        statusEl.textContent = "正在讀取 WMTS 圖層清單...";
 
         const capabilitiesUrl =
           WMTS_URL +
@@ -759,7 +752,7 @@
         const layers = wmtsCapabilities?.Contents?.Layer;
 
         if (!layers || layers.length === 0) {
-          throw new Error("WMTS 沒有回傳可選擇的圖層。");
+          throw new Error("WMTS 沒有回傳可用圖層。");
         }
 
         wmtsLayerSelect.innerHTML = "";
@@ -777,27 +770,24 @@
 
         wmtsLayerSelect.disabled = false;
 
-        /*
-          優先順序：
-          1. 上次記錄的底圖；
-          2. EMAP；
-          3. WMTS 第一個圖層。
-        */
         const availableLayerNames = Array.from(
           wmtsLayerSelect.options
         ).map(option => option.value);
 
         let selectedLayerName = null;
 
+        /* 優先使用上次選擇的圖層 */
         if (
           preferredLayerName &&
           availableLayerNames.includes(preferredLayerName)
         ) {
           selectedLayerName = preferredLayerName;
 
+        /* 否則優先 EMAP */
         } else if (availableLayerNames.includes("EMAP")) {
           selectedLayerName = "EMAP";
 
+        /* 若沒有 EMAP，使用第一個 */
         } else {
           selectedLayerName = layers[0].Identifier;
         }
@@ -817,7 +807,7 @@
           "<b>WMTS 圖層清單讀取失敗。</b><br>" +
           "錯誤：" + escapeHtml(error.message) +
           "<br><br>" +
-          "<small>請確認可直接開啟：<br>" +
+          "<small>請確認此網址是否可開啟：<br>" +
           escapeHtml(
             WMTS_URL +
             "?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
@@ -842,7 +832,7 @@
 
         if (!options) {
           throw new Error(
-            "找不到 EPSG:3857 / GoogleMapsCompatible 的設定：" +
+            "找不到 EPSG:3857 / GoogleMapsCompatible 設定：" +
             layerName
           );
         }
@@ -858,10 +848,7 @@
 
         wmtsLayer = newWmtsLayer;
 
-        /*
-          底圖放在第 0 層，
-          KML、GPS 定位圖層都會顯示在底圖上方。
-        */
+        /* 底圖固定在最底層 */
         map.getLayers().insertAt(0, wmtsLayer);
 
         statusEl.textContent = "已切換底圖：" + layerName;
@@ -870,7 +857,9 @@
 
       } catch (error) {
         console.error(error);
-        statusEl.textContent = "WMTS 底圖載入失敗：" + error.message;
+
+        statusEl.textContent =
+          "WMTS 底圖載入失敗：" + error.message;
       }
     }
 
@@ -878,9 +867,46 @@
       setWmtsLayer(this.value);
     });
 
-    /* =========================================================
+    /* =====================================================
        KML 圖層
-       ========================================================= */
+       ===================================================== */
+
+    function updateKmlLayerZIndex() {
+      /*
+        kmlLayers[0]：最下方
+        kmlLayers最後一個：最上方
+      */
+      kmlLayers.forEach((layerData, index) => {
+        layerData.layer.setZIndex(10 + index);
+      });
+    }
+
+    function moveKmlLayer(id, direction) {
+      const currentIndex = kmlLayers.findIndex(item => item.id === id);
+
+      if (currentIndex === -1) {
+        return;
+      }
+
+      const targetIndex = currentIndex + direction;
+
+      /* 已經是最上層或最下層 */
+      if (targetIndex < 0 || targetIndex >= kmlLayers.length) {
+        return;
+      }
+
+      const temporaryLayer = kmlLayers[currentIndex];
+
+      kmlLayers[currentIndex] = kmlLayers[targetIndex];
+      kmlLayers[targetIndex] = temporaryLayer;
+
+      updateKmlLayerZIndex();
+      renderLayerList();
+      scheduleSaveMapState();
+
+      statusEl.textContent =
+        "已調整圖層順序：" + temporaryLayer.name;
+    }
 
     fileInput.addEventListener("change", async function (event) {
       const files = Array.from(event.target.files);
@@ -908,7 +934,7 @@
         alert(
           "目前還可載入 " +
           remainingCount +
-          " 個圖層，超出的檔案將不會載入。"
+          " 個 KML，超出的檔案不會載入。"
         );
 
         loadFiles = files.slice(0, remainingCount);
@@ -921,15 +947,12 @@
       fileInput.value = "";
     });
 
-    /*
-      讀取使用者選擇的本機 KML 檔案。
-    */
     function loadKmlFile(file) {
       return new Promise(resolve => {
         const lowerName = file.name.toLowerCase();
 
         if (!lowerName.endsWith(".kml")) {
-          alert(file.name + " 不是 .kml 檔案，已略過。");
+          alert(file.name + " 不是 KML 檔案，已略過。");
           resolve();
           return;
         }
@@ -941,13 +964,13 @@
         reader.onload = function (event) {
           try {
             const kmlText = event.target.result;
-            const isFirstKml = kmlLayers.length === 0;
+            const isFirstLayer = kmlLayers.length === 0;
 
             const layerData = createKmlLayerFromText(
               file.name,
               kmlText,
               true,
-              isFirstKml,
+              isFirstLayer,
               true
             );
 
@@ -980,15 +1003,6 @@
       });
     }
 
-    /*
-      將 KML 文字建立成獨立圖層。
-
-      fileName：檔名
-      kmlText：KML XML 原始文字
-      visible：是否顯示
-      autoZoom：是否自動縮放至此圖層
-      shouldSave：是否自動保存
-    */
     function createKmlLayerFromText(
       fileName,
       kmlText,
@@ -1001,10 +1015,6 @@
         showPointNames: false
       });
 
-      /*
-        KML 大部分是 WGS84 / EPSG:4326 經緯度。
-        顯示時轉換至 EPSG:3857。
-      */
       const features = kmlFormat.readFeatures(kmlText, {
         dataProjection: "EPSG:4326",
         featureProjection: "EPSG:3857"
@@ -1035,6 +1045,7 @@
       map.addLayer(vectorLayer);
       kmlLayers.push(layerData);
 
+      updateKmlLayerZIndex();
       renderLayerList();
 
       if (autoZoom) {
@@ -1048,19 +1059,21 @@
       return layerData;
     }
 
-    /*
-      顯示 KML 圖層控制清單。
-    */
     function renderLayerList() {
       layerListEl.innerHTML = "";
 
       if (kmlLayers.length === 0) {
         layerListEl.innerHTML =
           '<div style="color:#666; font-size:14px;">尚未載入 KML。</div>';
+
         return;
       }
 
-      kmlLayers.forEach(layerData => {
+      /*
+        陣列第 0 個圖層是最下層，
+        最後一個圖層是最上層。
+      */
+      kmlLayers.forEach((layerData, index) => {
         const row = document.createElement("div");
         row.className = "layerItem";
 
@@ -1076,8 +1089,51 @@
 
         const name = document.createElement("span");
         name.className = "layerName";
-        name.title = layerData.name;
-        name.textContent = layerData.name;
+
+        /*
+          [1] 是最下層。
+          數字越大，位置越上層。
+        */
+        const displayOrder = index + 1;
+
+        name.textContent =
+          "[" + displayOrder + "] " + layerData.name;
+
+        name.title =
+          layerData.name +
+          "（圖層順序：" +
+          displayOrder +
+          "，數字越大越上方）";
+
+        const moveUpButton = document.createElement("button");
+        moveUpButton.type = "button";
+        moveUpButton.textContent = "↑";
+        moveUpButton.className = "layerMoveBtn";
+        moveUpButton.title = "圖層往上移";
+
+        /*
+          最後一個是最上層，不可再上移。
+        */
+        moveUpButton.disabled = index === kmlLayers.length - 1;
+
+        moveUpButton.addEventListener("click", function () {
+          moveKmlLayer(layerData.id, +1);
+        });
+
+        const moveDownButton = document.createElement("button");
+        moveDownButton.type = "button";
+        moveDownButton.textContent = "↓";
+        moveDownButton.className = "layerMoveBtn";
+        moveDownButton.title = "圖層往下移";
+
+        /*
+          第一個是最下層，不可再下移。
+        */
+        moveDownButton.disabled = index === 0;
+
+        moveDownButton.addEventListener("click", function () {
+          moveKmlLayer(layerData.id, -1);
+        });
 
         const zoomButton = document.createElement("button");
         zoomButton.type = "button";
@@ -1099,6 +1155,8 @@
 
         row.appendChild(checkbox);
         row.appendChild(name);
+        row.appendChild(moveUpButton);
+        row.appendChild(moveDownButton);
         row.appendChild(zoomButton);
         row.appendChild(removeButton);
 
@@ -1106,9 +1164,6 @@
       });
     }
 
-    /*
-      縮放至指定 KML 圖層。
-    */
     function zoomToLayer(layerData) {
       const extent = layerData.source.getExtent();
 
@@ -1124,9 +1179,6 @@
       });
     }
 
-    /*
-      移除指定 KML 圖層。
-    */
     function removeKmlLayer(id) {
       const index = kmlLayers.findIndex(item => item.id === id);
 
@@ -1139,23 +1191,22 @@
       map.removeLayer(layerData.layer);
       kmlLayers.splice(index, 1);
 
+      updateKmlLayerZIndex();
       renderLayerList();
-
-      statusEl.textContent = "已移除圖層：" + layerData.name;
-
       scheduleSaveMapState();
+
+      statusEl.textContent =
+        "已移除圖層：" + layerData.name;
     }
 
-    /*
-      清除目前畫面中所有 KML，
-      但會保留「自動記錄」功能本身。
-    */
     function clearCurrentKmlLayers() {
       kmlLayers.forEach(layerData => {
         map.removeLayer(layerData.layer);
       });
 
       kmlLayers = [];
+
+      updateKmlLayerZIndex();
       renderLayerList();
     }
 
@@ -1167,7 +1218,7 @@
 
       const confirmed = confirm(
         "確定要清除目前所有 KML 圖層嗎？\n\n" +
-        "這會更新自動記錄，因此下次開啟時不會再自動恢復這些 KML。"
+        "下次開啟網頁時，這些 KML 不會再自動還原。"
       );
 
       if (!confirmed) {
@@ -1176,27 +1227,28 @@
 
       clearCurrentKmlLayers();
 
-      await saveCurrentMapState();
+      /*
+        若啟用自動儲存則保存空白圖層狀態。
+        若未啟用，則直接移除之前記錄。
+      */
+      if (autoSaveCheckbox.checked) {
+        await saveCurrentMapState();
+      } else {
+        await dbDelete(STATE_KEY);
+      }
 
       statusEl.textContent =
-        "已清除目前 KML 圖層，並更新自動記錄資料。";
+        "已清除目前 KML 圖層。";
     });
 
-    /*
-      清除快取資料：
-      1. 刪除 IndexedDB 中保存的 KML、底圖、地圖位置。
-      2. 移除目前地圖中已載入的 KML。
-      3. 重設「自動記錄」為預設啟用。
-      4. 不會刪除手機／電腦原始 KML 檔案。
-    */
     clearSavedDataBtn.addEventListener("click", async function () {
       const confirmed = confirm(
         "確定要清除快取資料嗎？\n\n" +
-        "將會清除：\n" +
-        "• 上次選擇的底圖\n" +
+        "將清除：\n" +
+        "• 上次選擇的 WMTS 底圖\n" +
         "• 上次載入的 KML\n" +
-        "• KML 顯示／隱藏狀態\n" +
-        "• 地圖位置與縮放設定\n\n" +
+        "• KML 顯示狀態與圖層順序\n" +
+        "• 地圖中心位置與縮放設定\n\n" +
         "不會刪除手機或電腦中的原始 KML 檔案。"
       );
 
@@ -1205,27 +1257,19 @@
       }
 
       try {
-        /*
-          先停止自動儲存，
-          避免清除過程又寫入新的空白資料。
-        */
         isRestoringSavedState = true;
 
         clearTimeout(saveTimer);
 
-        /*
-          移除目前載入的 KML。
-        */
+        /* 移除目前畫面上的 KML */
         clearCurrentKmlLayers();
 
-        /*
-          刪除 IndexedDB 記錄。
-        */
+        /* 刪除 IndexedDB 內保存的資料 */
         await dbDelete(STATE_KEY);
 
         /*
-          清除是否自動記錄的偏好後，
-          重新回到預設值：打勾。
+          自動記錄恢復為預設啟用狀態，
+          但目前沒有任何 KML 保存資料。
         */
         localStorage.removeItem(AUTO_SAVE_KEY);
         autoSaveCheckbox.checked = true;
@@ -1244,9 +1288,9 @@
       }
     });
 
-    /* =========================================================
+    /* =====================================================
        GPS 定位
-       ========================================================= */
+       ===================================================== */
 
     locationBtn.addEventListener("click", function () {
       if (!navigator.geolocation) {
@@ -1311,7 +1355,7 @@
 
             case error.TIMEOUT:
               message =
-                "定位逾時，請到訊號較佳或戶外的位置後再試一次。";
+                "定位逾時，請到戶外或訊號較佳的位置後再試一次。";
               break;
           }
 
@@ -1327,11 +1371,6 @@
       );
     });
 
-    /*
-      顯示使用者 GPS 位置：
-      - 藍點：目前位置
-      - 藍色圓形：GPS 誤差範圍
-    */
     function showUserLocation(coordinate, accuracy) {
       if (userLocationLayer) {
         map.removeLayer(userLocationLayer);
@@ -1391,9 +1430,9 @@
       map.addLayer(userLocationLayer);
     }
 
-    /* =========================================================
-       還原上次記錄
-       ========================================================= */
+    /* =====================================================
+       還原資料
+       ===================================================== */
 
     async function restoreSavedMapState(savedState) {
       if (!savedState) {
@@ -1407,9 +1446,6 @@
       try {
         isRestoringSavedState = true;
 
-        /*
-          還原 KML。
-        */
         if (Array.isArray(savedState.kmlLayers)) {
           const restoreLayers = savedState.kmlLayers.slice(
             0,
@@ -1432,7 +1468,7 @@
 
             } catch (error) {
               console.warn(
-                "無法還原 KML 圖層：" + savedLayer.name,
+                "無法還原 KML：" + savedLayer.name,
                 error
               );
             }
@@ -1440,8 +1476,8 @@
         }
 
         /*
-          還原地圖視圖位置。
-          若沒有記錄位置但有 KML，則縮放到第一個 KML。
+          優先還原地圖位置。
+          若沒有保存地圖位置，則縮放到第一個 KML。
         */
         if (
           savedState.view &&
@@ -1461,22 +1497,22 @@
 
         if (kmlLayers.length > 0) {
           statusEl.textContent =
-            "已還原上次選擇的底圖與 " +
+            "已還原 " +
             kmlLayers.length +
             " 個 KML 圖層。";
         }
 
       } catch (error) {
-        console.warn("還原地圖狀態失敗：", error);
+        console.warn("還原資料失敗：", error);
 
       } finally {
         isRestoringSavedState = false;
       }
     }
 
-    /* =========================================================
+    /* =====================================================
        工具函式
-       ========================================================= */
+       ===================================================== */
 
     function escapeHtml(value) {
       const div = document.createElement("div");
@@ -1484,26 +1520,16 @@
       return div.innerHTML;
     }
 
-    /* =========================================================
+    /* =====================================================
        初始化
-       ========================================================= */
+       ===================================================== */
 
     async function initializeApp() {
       try {
-        /*
-          初始化時暫時禁止自動儲存。
-        */
         isRestoringSavedState = true;
 
-        /*
-          開啟瀏覽器 IndexedDB。
-        */
         await openDatabase();
 
-        /*
-          先讀取上次保存狀態，
-          取得上次使用的 WMTS 圖層名稱。
-        */
         let savedState = null;
 
         if (autoSaveCheckbox.checked) {
@@ -1513,15 +1539,8 @@
         const preferredLayerName =
           savedState?.wmtsLayer || null;
 
-        /*
-          讀取 WMTS 圖層清單，
-          並優先選擇上次使用的底圖。
-        */
         await loadWmtsCapabilities(preferredLayerName);
 
-        /*
-          還原 KML、顯示狀態、地圖位置。
-        */
         await restoreSavedMapState(savedState);
 
       } catch (error) {
