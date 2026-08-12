@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>KML 多圖層 + 國土測繪中心 WMTS</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #e9eef1;
+    }
+
+    /* 左上控制欄 */
+    #controlPanel {
+      position: absolute;
+      z-index: 1000;
+      top: max(10px, env(safe-area-inset-top));
+      left: max(10px, env(safe-area-inset-left));
+      width: 400px;
+      max-width: calc(100vw - 20px);
+      max-height: calc(100vh - 20px);
+      box-sizing: border-box;
+
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 10px;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    #panelHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      box-sizing: border-box;
+      padding: 8px 10px 8px 13px;
+      background: #1f5f99;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #panelTitle {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    #togglePanelBtn {
+      min-width: 34px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: 5px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 20px;
+      line-height: 25px;
+      cursor: pointer;
+    }
+
+    #panelContent {
+      max-height: calc(100vh - 80px);
+      padding: 10px 12px 14px;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    #controlPanel.collapsed #panelContent {
+      display: none;
+    }
+
+    .sectionTitle {
+      margin: 8px 0 5px;
+      padding-top: 9px;
+      border-top: 1px solid #dddddd;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .sectionTitle:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    select,
+    input[type="file"],
+    button {
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 15px;
+    }
+
+    select,
+    input[type="file"] {
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    button {
+      padding: 7px 10px;
+      border: 1px solid #a9a9a9;
+      border-radius: 5px;
+      background: #fafafa;
+      color: #222;
+      cursor: pointer;
+    }
+
+    button:active {
+      background: #e3e3e3;
+    }
+
+    #locationBtn {
+      width: 100%;
+      margin-top: 6px;
+      background: #26743b;
+      border-color: #1d5b2e;
+      color: white;
+      font-weight: bold;
+    }
+
+    #locationBtn:disabled {
+      background: #8ea695;
+      border-color: #8ea695;
+      cursor: not-allowed;
+    }
+
+    #clearAllBtn {
+      float: right;
+      margin: -5px 0 0 0;
+      padding: 4px 7px;
+      font-size: 12px;
+    }
+
+    #layerList {
+      clear: both;
+      margin-top: 8px;
+    }
+
+    .layerItem {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 34px;
+      padding: 5px 2px;
+      border-bottom: 1px solid #e7e7e7;
+      font-size: 14px;
+    }
+
+    .layerName {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .layerItem button {
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+
+    #status {
+      display: block;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #dddddd;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #333;
+      word-break: break-word;
+    }
+
+    .hint {
+      margin-top: 5px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #666;
+    }
+
+    /*
+      手機版：
+      使用 CSS Media Query 自動判斷螢幕寬度，
+      不依賴不可靠的 User-Agent 判斷。
+    */
+    @media (max-width: 700px) {
+      #controlPanel {
+        top: max(6px, env(safe-area-inset-top));
+        left: max(6px, env(safe-area-inset-left));
+        width: calc(100vw - 12px);
+        max-width: none;
+        border-radius: 8px;
+      }
+
+      #panelHeader {
+        min-height: 42px;
+      }
+
+      #panelContent {
+        max-height: calc(100vh - 65px);
+        padding-bottom: 20px;
+      }
+
+      #panelTitle {
+        font-size: 15px;
+      }
+
+      select,
+      input[type="file"],
+      button {
+        font-size: 16px;
+      }
+
+      .layerItem {
+        min-height: 39px;
+      }
+
+      .layerItem button {
+        padding: 6px 7px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="controlPanel">
+    <div id="panelHeader">
+      <span id="panelTitle">KML 圖層與測繪中心底圖</span>
+      <button id="togglePanelBtn" type="button" title="收合或展開控制欄">−</button>
+    </div>
+
+    <div id="panelContent">
+
+      <div class="sectionTitle">國土測繪中心 WMTS 底圖</div>
+
+      <select id="wmtsLayerSelect" disabled>
+        <option>正在讀取 WMTS 圖層清單...</option>
+      </select>
+
+      <div class="hint">
+        此清單由 WMTS GetCapabilities 自動讀取。<br>
+        可選擇電子地圖、正射影像、段籍圖、村里界等服務圖層。
+      </div>
+
+      <div class="sectionTitle">目前位置</div>
+
+      <button id="locationBtn" type="button">
+        📍 定位到我的位置
+      </button>
+
+      <div class="hint">
+        手機定位通常需要允許瀏覽器取得位置權限。<br>
+        正式網站建議使用 HTTPS，否則部分手機瀏覽器無法定位。
+      </div>
+
+      <div class="sectionTitle">載入本機 KML</div>
+
+      <input
+        id="fileInput"
+        type="file"
+        multiple
+        accept=".kml,application/vnd.google-earth.kml+xml"
+      >
+
+      <div class="hint">
+        最多同時載入 4 個 KML 圖層。<br>
+        KML 不會上傳，只在目前裝置的瀏覽器內讀取。
+      </div>
+
+      <div class="sectionTitle">
+        我的 KML 圖層
+        <button id="clearAllBtn" type="button">全部清除</button>
+      </div>
+
+      <div id="layerList">
+        <div style="color:#666; font-size:14px;">
+          尚未載入 KML。
+        </div>
+      </div>
+
+      <span id="status">地圖初始化中...</span>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    /*
+      依你的要求使用舊版 WMTS 位址。
+
+      注意：
+      若網頁是 HTTPS，這個 HTTP WMTS 可能被瀏覽器封鎖。
+      若 WMTS 未開放 CORS，fetch GetCapabilities 也會失敗。
+    */
+    const wmtsUrl = "https://wmts.nlsc.gov.tw/wmts";
+
+    /*
+      最多同時載入 KML 圖層數量
+    */
+    const MAX_KML_LAYERS = 4;
+
+    const controlPanel = document.getElementById("controlPanel");
+    const panelHeader = document.getElementById("panelHeader");
+    const togglePanelBtn = document.getElementById("togglePanelBtn");
+
+    const wmtsLayerSelect = document.getElementById("wmtsLayerSelect");
+    const fileInput = document.getElementById("fileInput");
+    const layerListEl = document.getElementById("layerList");
+    const clearAllBtn = document.getElementById("clearAllBtn");
+    const locationBtn = document.getElementById("locationBtn");
+    const statusEl = document.getElementById("status");
+
+    let wmtsCapabilities = null;
+    let wmtsLayer = null;
+    let userLocationLayer = null;
+
+    let kmlLayers = [];
+    let nextLayerId = 1;
+
+    /*
+      舊版 WMTS 多數圖磚服務使用 GoogleMapsCompatible，
+      因此採 EPSG:3857（Google / OpenStreetMap 常用座標系統）。
+
+      KML 原始座標通常為 EPSG:4326 經緯度，
+      載入時會自動轉成 EPSG:3857。
+    */
+    const map = new ol.Map({
+      target: "map",
+      layers: [],
+      view: new ol.View({
+        projection: "EPSG:3857",
+        center: ol.proj.fromLonLat([120.9, 23.7]),
+        zoom: 7,
+        minZoom: 5,
+        maxZoom: 20
+      })
+    });
+
+    /*
+      手機版控制欄預設收合；
+      電腦版預設展開。
+    */
+    function applyInitialPanelMode() {
+      const isMobileLayout = window.matchMedia("(max-width: 700px)").matches;
+
+      if (isMobileLayout) {
+        setPanelCollapsed(true);
+      } else {
+        setPanelCollapsed(false);
+      }
+    }
+
+    function setPanelCollapsed(collapsed) {
+      controlPanel.classList.toggle("collapsed", collapsed);
+      togglePanelBtn.textContent = collapsed ? "+" : "−";
+      togglePanelBtn.title = collapsed ? "展開控制欄" : "收合控制欄";
+    }
+
+    togglePanelBtn.addEventListener("click", function (event) {
+      event.stopPropagation();
+
+      const isCollapsed = controlPanel.classList.contains("collapsed");
+      setPanelCollapsed(!isCollapsed);
+    });
+
+    /*
+      點擊標題列也可收合／展開，
+      但點到按鈕時不會重複觸發。
+    */
+    panelHeader.addEventListener("click", function () {
+      const isCollapsed = controlPanel.classList.contains("collapsed");
+      setPanelCollapsed(!isCollapsed);
+    });
+
+    applyInitialPanelMode();
+
+    /*
+      讀取 WMTS Capabilities，取得所有服務圖層。
+    */
+    async function loadWmtsCapabilities() {
+      try {
+        statusEl.textContent = "正在讀取 WMTS 圖層清單...";
+
+        const capabilitiesUrl =
+          wmtsUrl +
+          "?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0";
+
+        const response = await fetch(capabilitiesUrl);
+
+        if (!response.ok) {
+          throw new Error("WMTS 回應錯誤，HTTP " + response.status);
+        }
+
+        const xmlText = await response.text();
+
+        const parser = new ol.format.WMTSCapabilities();
+        wmtsCapabilities = parser.read(xmlText);
+
+        const layers = wmtsCapabilities?.Contents?.Layer;
+
+        if (!layers || layers.length === 0) {
+          throw new Error("WMTS 沒有回傳可選用的圖層。");
+        }
+
+        wmtsLayerSelect.innerHTML = "";
+
+        layers.forEach(layerInfo => {
+          const option = document.createElement("option");
+
+          option.value = layerInfo.Identifier;
+
+          /*
+            清單顯示標題；若服務沒有 Title，才顯示 Identifier。
+          */
+          option.textContent =
+            layerInfo.Title ||
+            layerInfo.Identifier;
+
+          wmtsLayerSelect.appendChild(option);
+        });
+
+        wmtsLayerSelect.disabled = false;
+
+        /*
+          若存在 EMAP，預設選通用版電子地圖；
+          否則使用 WMTS 回傳的第一個圖層。
+        */
+        const emapOption = Array.from(wmtsLayerSelect.options)
+          .find(option => option.value === "EMAP");
+
+        if (emapOption) {
+          wmtsLayerSelect.value = "EMAP";
+          setWmtsLayer("EMAP");
+        } else {
+          setWmtsLayer(layers[0].Identifier);
+        }
+
+        statusEl.textContent =
+          "WMTS 圖層清單讀取完成，共 " + layers.length + " 個圖層。";
+
+      } catch (error) {
+        console.error(error);
+
+        statusEl.innerHTML =
+          "<b>WMTS 圖層清單讀取失敗。</b><br>" +
+          "錯誤：" + escapeHtml(error.message) + "<br><br>" +
+          "<b>常見原因：</b><br>" +
+          "1. WMTS 伺服器未開放 CORS 跨網域讀取。<br>" +
+          "2. HTTPS 網頁呼叫 HTTP WMTS，被瀏覽器阻擋。<br>" +
+          "3. 機關網路、防火牆或 Proxy 阻擋連線。<br><br>" +
+          "<small>Capabilities 測試網址：<br>" +
+          escapeHtml(
+            wmtsUrl +
+            "?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
+          ) +
+          "</small>";
+      }
+    }
+
+    /*
+      切換 WMTS 底圖。
+      將選擇的 WMTS 圖層放在地圖最底層。
+    */
+    function setWmtsLayer(layerName) {
+      try {
+        if (!wmtsCapabilities) {
+          return;
+        }
+
+        const options = ol.source.WMTS.optionsFromCapabilities(
+          wmtsCapabilities,
+          {
+            layer: layerName,
+            projection: "EPSG:3857"
+          }
+        );
+
+        if (!options) {
+          throw new Error(
+            "此圖層找不到 EPSG:3857 / GoogleMapsCompatible 的 WMTS 設定：" +
+            layerName
+          );
+        }
+
+        const newWmtsLayer = new ol.layer.Tile({
+          source: new ol.source.WMTS(options),
+          zIndex: 0
+        });
+
+        if (wmtsLayer) {
+          map.removeLayer(wmtsLayer);
+        }
+
+        wmtsLayer = newWmtsLayer;
+        map.getLayers().insertAt(0, wmtsLayer);
+
+        statusEl.textContent = "已切換底圖：" + layerName;
+
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "WMTS 底圖載入失敗：" + error.message;
+      }
+    }
+
+    wmtsLayerSelect.addEventListener("change", function () {
+      setWmtsLayer(this.value);
+    });
+
+    /*
+      載入多個 KML。
+    */
+    fileInput.addEventListener("change", async function (event) {
+      const files = Array.from(event.target.files);
+
+      if (files.length === 0) {
+        return;
+      }
+
+      const remainingCount = MAX_KML_LAYERS - kmlLayers.length;
+
+      if (remainingCount <= 0) {
+        alert("目前最多只能同時載入 " + MAX_KML_LAYERS + " 個 KML 圖層。");
+        fileInput.value = "";
+        return;
+      }
+
+      let loadFiles = files;
+
+      if (files.length > remainingCount) {
+        alert(
+          "目前還可載入 " + remainingCount +
+          " 個圖層，超出的檔案將不會載入。"
+        );
+
+        loadFiles = files.slice(0, remainingCount);
+      }
+
+      for (const file of loadFiles) {
+        await loadKmlFile(file);
+      }
+
+      fileInput.value = "";
+    });
+
+    /*
+      每個 KML 建立為獨立 Vector Layer。
+    */
+    function loadKmlFile(file) {
+      return new Promise(resolve => {
+        const lowerName = file.name.toLowerCase();
+
+        if (!lowerName.endsWith(".kml")) {
+          alert(file.name + " 不是 .kml 檔案，已略過。");
+          resolve();
+          return;
+        }
+
+        statusEl.textContent = "正在讀取 KML：" + file.name;
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          try {
+            const kmlFormat = new ol.format.KML({
+              extractStyles: true,
+              showPointNames: false
+            });
+
+            const features = kmlFormat.readFeatures(event.target.result, {
+              dataProjection: "EPSG:4326",
+              featureProjection: "EPSG:3857"
+            });
+
+            if (!features || features.length === 0) {
+              alert(file.name + " 沒有可讀取的點、線或面圖徵。");
+              resolve();
+              return;
+            }
+
+            const source = new ol.source.Vector({
+              features: features
+            });
+
+            /*
+              不指定 style，優先保留 KML 自己的線色、面色與圖示樣式。
+            */
+            const vectorLayer = new ol.layer.Vector({
+              source: source,
+              visible: true,
+              zIndex: 10 + kmlLayers.length
+            });
+
+            const layerData = {
+              id: nextLayerId++,
+              name: file.name,
+              layer: vectorLayer,
+              source: source
+            };
+
+            map.addLayer(vectorLayer);
+            kmlLayers.push(layerData);
+
+            renderLayerList();
+
+            /*
+              第一個 KML 載入後自動縮放。
+              後續圖層不自動跳轉，避免使用者畫面一直移動。
+            */
+            if (kmlLayers.length === 1) {
+              zoomToLayer(layerData);
+            }
+
+            statusEl.textContent =
+              "已載入 KML：" + file.name +
+              "，共 " + features.length + " 個圖徵。";
+
+          } catch (error) {
+            console.error(error);
+            alert(file.name + " 讀取失敗：" + error.message);
+          }
+
+          resolve();
+        };
+
+        reader.onerror = function () {
+          alert(file.name + " 檔案讀取失敗。");
+          resolve();
+        };
+
+        reader.readAsText(file, "UTF-8");
+      });
+    }
+
+    /*
+      產生 KML 圖層控制清單。
+    */
+    function renderLayerList() {
+      layerListEl.innerHTML = "";
+
+      if (kmlLayers.length === 0) {
+        layerListEl.innerHTML =
+          '<div style="color:#666; font-size:14px;">尚未載入 KML。</div>';
+        return;
+      }
+
+      kmlLayers.forEach(layerData => {
+        const row = document.createElement("div");
+        row.className = "layerItem";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = layerData.layer.getVisible();
+        checkbox.title = "顯示或隱藏圖層";
+
+        checkbox.addEventListener("change", function () {
+          layerData.layer.setVisible(this.checked);
+        });
+
+        const name = document.createElement("span");
+        name.className = "layerName";
+        name.textContent = layerData.name;
+        name.title = layerData.name;
+
+        const zoomButton = document.createElement("button");
+        zoomButton.type = "button";
+        zoomButton.textContent = "定位";
+
+        zoomButton.addEventListener("click", function () {
+          zoomToLayer(layerData);
+        });
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.textContent = "移除";
+
+        removeButton.addEventListener("click", function () {
+          removeKmlLayer(layerData.id);
+        });
+
+        row.appendChild(checkbox);
+        row.appendChild(name);
+        row.appendChild(zoomButton);
+        row.appendChild(removeButton);
+
+        layerListEl.appendChild(row);
+      });
+    }
+
+    function zoomToLayer(layerData) {
+      const extent = layerData.source.getExtent();
+
+      if (ol.extent.isEmpty(extent)) {
+        alert("此圖層沒有可定位的範圍。");
+        return;
+      }
+
+      map.getView().fit(extent, {
+        padding: [80, 30, 30, 30],
+        maxZoom: 18,
+        duration: 500
+      });
+    }
+
+    function removeKmlLayer(id) {
+      const index = kmlLayers.findIndex(item => item.id === id);
+
+      if (index === -1) {
+        return;
+      }
+
+      const layerData = kmlLayers[index];
+
+      map.removeLayer(layerData.layer);
+      kmlLayers.splice(index, 1);
+
+      renderLayerList();
+      statusEl.textContent = "已移除圖層：" + layerData.name;
+    }
+
+    clearAllBtn.addEventListener("click", function () {
+      if (kmlLayers.length === 0) {
+        return;
+      }
+
+      if (!confirm("確定清除全部 KML 圖層？")) {
+        return;
+      }
+
+      kmlLayers.forEach(layerData => {
+        map.removeLayer(layerData.layer);
+      });
+
+      kmlLayers = [];
+      renderLayerList();
+
+      statusEl.textContent = "已清除全部 KML 圖層。";
+    });
+
+    /*
+      使用手機／電腦瀏覽器定位功能。
+      取得位置後：
+      1. 在地圖放置藍色定位點。
+      2. 畫出定位誤差半徑範圍。
+      3. 地圖縮放到目前位置。
+    */
+    locationBtn.addEventListener("click", function () {
+      if (!navigator.geolocation) {
+        alert("此瀏覽器不支援定位功能。");
+        return;
+      }
+
+      locationBtn.disabled = true;
+      locationBtn.textContent = "正在定位...";
+      statusEl.textContent = "正在要求定位權限與取得目前位置...";
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const longitude = position.coords.longitude;
+          const latitude = position.coords.latitude;
+          const accuracy = position.coords.accuracy;
+
+          const coordinate = ol.proj.fromLonLat([longitude, latitude]);
+
+          showUserLocation(coordinate, accuracy);
+
+          map.getView().animate({
+            center: coordinate,
+            zoom: 17,
+            duration: 600
+          });
+
+          locationBtn.disabled = false;
+          locationBtn.textContent = "📍 定位到我的位置";
+
+          statusEl.textContent =
+            "定位完成。經度：" + longitude.toFixed(6) +
+            "，緯度：" + latitude.toFixed(6) +
+            "，誤差約 ±" + Math.round(accuracy) + " 公尺。";
+        },
+
+        function (error) {
+          locationBtn.disabled = false;
+          locationBtn.textContent = "📍 定位到我的位置";
+
+          let message = "定位失敗。";
+
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              message = "定位被拒絕。請在瀏覽器網站權限中允許使用位置資訊。";
+              break;
+
+            case error.POSITION_UNAVAILABLE:
+              message = "目前無法取得位置，請確認 GPS、行動網路或 Wi-Fi 已啟用。";
+              break;
+
+            case error.TIMEOUT:
+              message = "定位逾時，請到戶外或訊號較佳的位置後再試一次。";
+              break;
+          }
+
+          statusEl.textContent = message;
+          alert(message);
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 30000
+        }
+      );
+    });
+
+    /*
+      顯示使用者目前位置。
+    */
+    function showUserLocation(coordinate, accuracy) {
+      if (userLocationLayer) {
+        map.removeLayer(userLocationLayer);
+      }
+
+      const locationFeature = new ol.Feature({
+        geometry: new ol.geom.Point(coordinate)
+      });
+
+      const accuracyFeature = new ol.Feature({
+        geometry: new ol.geom.Circle(coordinate, accuracy)
+      });
+
+      userLocationLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [accuracyFeature, locationFeature]
+        }),
+
+        zIndex: 999,
+
+        style: function (feature) {
+          const geometryType = feature.getGeometry().getType();
+
+          if (geometryType === "Circle") {
+            return new ol.style.Style({
+              fill: new ol.style.Fill({
+                color: "rgba(30, 120, 255, 0.13)"
+              }),
+              stroke: new ol.style.Stroke({
+                color: "rgba(30, 120, 255, 0.75)",
+                width: 2
+              })
+            });
+          }
+
+          return new ol.style.Style({
+            image: new ol.style.Circle({
+              radius: 8,
+              fill: new ol.style.Fill({
+                color: "#1677ff"
+              }),
+              stroke: new ol.style.Stroke({
+                color: "#ffffff",
+                width: 3
+              })
+            })
+          });
+        }
+      });
+
+      map.addLayer(userLocationLayer);
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = String(value);
+      return div.innerHTML;
+    }
+
+    loadWmtsCapabilities();
+  </script>
+
+</body>
+</html>
