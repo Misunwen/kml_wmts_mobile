@@ -3,20 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>國土測繪中心 WMTS + KML/KMZ/GPX 地圖</title>
+  <title>國土測繪中心 WMTS + KML 地圖</title>
 
   <!-- OpenLayers -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css">
   <script src="https://cdn.jsdelivr.net/npm/ol@10.6.1/dist/ol.js"></script>
 
-  <!-- JSZip（用於解壓縮 KMZ） -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
-  </script>
-
   <style>
     /* ===== 全域重置 ===== */
-    html,
-    body {
+    html, body {
       width: 100%;
       height: 100%;
       margin: 0;
@@ -104,17 +99,14 @@
       border-top: none;
     }
 
-    select,
-    input[type="file"],
-    button {
+    select, input[type="file"], button {
       max-width: 100%;
       box-sizing: border-box;
       font-family: inherit;
       font-size: 15px;
     }
 
-    select,
-    input[type="file"] {
+    select, input[type="file"] {
       width: 100%;
       margin-top: 5px;
     }
@@ -127,12 +119,8 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
-      background: #eeeeee;
-    }
-    button:active {
-      background: #dddddd;
-    }
+    button:hover { background: #eeeeee; }
+    button:active { background: #dddddd; }
     button:disabled {
       color: #777;
       background: #dddddd;
@@ -147,12 +135,9 @@
       border-color: #1b5a2d;
       font-weight: bold;
     }
-    #locationBtn:hover {
-      background: #1e6130;
-    }
+    #locationBtn:hover { background: #1e6130; }
 
-    #clearAllBtn,
-    #clearSavedDataBtn {
+    #clearAllBtn, #clearSavedDataBtn {
       width: 100%;
       margin-top: 7px;
     }
@@ -162,9 +147,7 @@
       background: #fff6f6;
       border-color: #d5a4a4;
     }
-    #clearSavedDataBtn:hover {
-      background: #ffe7e7;
-    }
+    #clearSavedDataBtn:hover { background: #ffe7e7; }
 
     .hint {
       margin-top: 5px;
@@ -381,9 +364,7 @@
         padding-bottom: 22px;
       }
 
-      select,
-      input[type="file"],
-      button {
+      select, input[type="file"], button {
         font-size: 16px;
       }
 
@@ -422,29 +403,6 @@
         font-size: 12px;
       }
     }
-
-    /* ===== 支援格式標籤 ===== */
-    .formatBadge {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 10px;
-      font-weight: bold;
-      margin-left: 4px;
-      vertical-align: middle;
-    }
-    .formatBadge.kml {
-      background: #e8f0fe;
-      color: #1a73e8;
-    }
-    .formatBadge.kmz {
-      background: #fef3e8;
-      color: #e8741a;
-    }
-    .formatBadge.gpx {
-      background: #e8fef0;
-      color: #1a8e3c;
-    }
   </style>
 </head>
 
@@ -452,7 +410,7 @@
 
   <div id="controlPanel">
     <div id="panelHeader">
-      <span id="panelTitle">KML/KMZ/GPX 地圖檢視器</span>
+      <span id="panelTitle">KML 圖層與測繪中心底圖</span>
       <button id="togglePanelBtn" type="button" title="收合控制欄">−</button>
     </div>
 
@@ -469,15 +427,10 @@
       <button id="locationBtn" type="button">📍 定位到我的位置</button>
       <div class="hint">第一次使用時請允許瀏覽器使用位置資訊。</div>
 
-      <!-- 載入檔案 -->
-      <div class="sectionTitle">載入 GIS 檔案</div>
-      <input id="fileInput" type="file" multiple accept=".kml,.kmz,.gpx,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/gpx+xml">
-      <div class="hint">
-        支援格式：<span class="formatBadge kml">KML</span>
-        <span class="formatBadge kmz">KMZ</span>
-        <span class="formatBadge gpx">GPX</span>
-        <br>最多同時載入 10 個檔案。所有檔案僅在本機瀏覽器讀取，不會上傳。
-      </div>
+      <!-- 載入 KML -->
+      <div class="sectionTitle">載入本機 KML</div>
+      <input id="fileInput" type="file" multiple accept=".kml,application/vnd.google-earth.kml+xml">
+      <div class="hint">最多同時載入 10 個 KML。KML 僅在本機瀏覽器讀取，不會上傳。</div>
 
       <!-- 進度條 -->
       <div id="progressContainer">
@@ -491,19 +444,19 @@
       <div class="sectionTitle">自動記錄</div>
       <label class="autoSaveRow">
         <input id="autoSaveCheckbox" type="checkbox" checked>
-        <span>記住底圖、圖層、順序與地圖位置</span>
+        <span>記住底圖、KML、圖層順序與地圖位置</span>
       </label>
       <div class="hint">記錄資料保存在目前裝置瀏覽器的 IndexedDB。</div>
 
       <!-- 圖層清單 -->
-      <div class="sectionTitle">我的圖層</div>
+      <div class="sectionTitle">我的 KML 圖層</div>
       <div id="layerList">
-        <div style="color:#666; font-size:14px;">尚未載入任何檔案。</div>
+        <div style="color:#666; font-size:14px;">尚未載入 KML。</div>
       </div>
 
-      <button id="clearAllBtn" type="button">清除所有圖層</button>
-      <button id="clearSavedDataBtn" type="button">清除快取資料</button>
-      <div class="hint">清除快取不會刪除手機或電腦中的原始檔案。</div>
+      <button id="clearAllBtn" type="button">清除目前 KML 圖層</button>
+      <button id="clearSavedDataBtn" type="button">清除快取資料與之前載入的 KML</button>
+      <div class="hint">清除快取不會刪除手機或電腦中的原始 KML 檔案。</div>
 
       <span id="status">地圖初始化中...</span>
     </div>
@@ -516,7 +469,7 @@
 
     /**
      * ============================================================
-     *  KML / KMZ / GPX 地圖應用程式
+     *  KML + WMTS 地圖應用程式
      *  支援：圖層透明度、點標記大小、標籤欄位與文字大小
      * ============================================================
      */
@@ -529,12 +482,12 @@
 
       const CONFIG = {
         WMTS_URL: 'https://wmts.nlsc.gov.tw/wmts',
-        MAX_LAYERS: 10,
-        DB_NAME: 'nlsc-map-db',
+        MAX_KML_LAYERS: 10,
+        DB_NAME: 'nlsc-kml-map-db',
         DB_VERSION: 1,
         STORE_NAME: 'mapState',
         STATE_KEY: 'lastMapState',
-        AUTO_SAVE_KEY: 'nlsc-map-auto-save',
+        AUTO_SAVE_KEY: 'nlsc-kml-map-auto-save',
         SAVE_DEBOUNCE_MS: 700,
         LOCATION_TIMEOUT_MS: 15000,
         LOCATION_MAX_AGE_MS: 30000,
@@ -544,6 +497,7 @@
         DEFAULT_ZOOM: 7,
         MIN_ZOOM: 5,
         MAX_ZOOM: 20,
+        // 點設定預設值
         DEFAULT_POINT_RADIUS: 7,
         MIN_POINT_RADIUS: 3,
         MAX_POINT_RADIUS: 20,
@@ -611,50 +565,23 @@
           .replace(/javascript\s*:/gi, '');
       }
 
-      function isValidGisFile(file) {
-        const name = file.name.toLowerCase();
-        const validExts = ['.kml', '.kmz', '.gpx'];
-        return validExts.some(ext => name.endsWith(ext));
-      }
-
-      function getFileFormat(file) {
-        const name = file.name.toLowerCase();
-        if (name.endsWith('.kml')) return 'kml';
-        if (name.endsWith('.kmz')) return 'kmz';
-        if (name.endsWith('.gpx')) return 'gpx';
-        return null;
-      }
-
-      function getFileIcon(format) {
-        switch (format) {
-          case 'kml':
-            return '📄';
-          case 'kmz':
-            return '📦';
-          case 'gpx':
-            return '📍';
-          default:
-            return '🗺️';
+      function isValidKmlFile(file) {
+        const lowerName = file.name.toLowerCase();
+        if (!lowerName.endsWith('.kml')) return false;
+        const validTypes = [
+          'application/vnd.google-earth.kml+xml',
+          'text/xml', 'application/xml', 'text/plain',
+        ];
+        if (file.type && !validTypes.includes(file.type)) {
+          return false;
         }
-      }
-
-      function getFileBadge(format) {
-        switch (format) {
-          case 'kml':
-            return '<span class="formatBadge kml">KML</span>';
-          case 'kmz':
-            return '<span class="formatBadge kmz">KMZ</span>';
-          case 'gpx':
-            return '<span class="formatBadge gpx">GPX</span>';
-          default:
-            return '';
-        }
+        return true;
       }
 
       function setStatus(message, level = 'info') {
         const el = DOM.status;
         const prefix = level === 'error' ? '❌ ' :
-          level === 'warn' ? '⚠️ ' : '';
+                       level === 'warn' ? '⚠️ ' : '';
         el.textContent = prefix + message;
       }
 
@@ -702,8 +629,7 @@
       function dbGet(key) {
         return new Promise((resolve, reject) => {
           const db = AppState.database;
-          if (!db) { reject(new Error('IndexedDB 尚未初始化。'));
-            return; }
+          if (!db) { reject(new Error('IndexedDB 尚未初始化。')); return; }
           const transaction = db.transaction(CONFIG.STORE_NAME, 'readonly');
           const store = transaction.objectStore(CONFIG.STORE_NAME);
           const request = store.get(key);
@@ -715,8 +641,7 @@
       function dbSet(key, value) {
         return new Promise((resolve, reject) => {
           const db = AppState.database;
-          if (!db) { reject(new Error('IndexedDB 尚未初始化。'));
-            return; }
+          if (!db) { reject(new Error('IndexedDB 尚未初始化。')); return; }
           const transaction = db.transaction(CONFIG.STORE_NAME, 'readwrite');
           const store = transaction.objectStore(CONFIG.STORE_NAME);
           store.put(value, key);
@@ -728,8 +653,7 @@
       function dbDelete(key) {
         return new Promise((resolve, reject) => {
           const db = AppState.database;
-          if (!db) { reject(new Error('IndexedDB 尚未初始化。'));
-            return; }
+          if (!db) { reject(new Error('IndexedDB 尚未初始化。')); return; }
           const transaction = db.transaction(CONFIG.STORE_NAME, 'readwrite');
           const store = transaction.objectStore(CONFIG.STORE_NAME);
           store.delete(key);
@@ -763,7 +687,6 @@
           },
           kmlLayers: AppState.kmlLayers.map(layerData => ({
             name: layerData.name,
-            format: layerData.format || 'kml',
             text: layerData.text,
             visible: layerData.layer.getVisible(),
             opacity: layerData.opacity !== undefined ? layerData.opacity : CONFIG.DEFAULT_OPACITY,
@@ -786,7 +709,7 @@
         } catch (error) {
           console.warn('儲存資料失敗：', error);
           if (error.name === 'QuotaExceededError') {
-            setStatus('檔案太大，瀏覽器儲存空間不足，無法自動記錄。', 'warn');
+            setStatus('KML 太大，瀏覽器儲存空間不足，無法自動記錄。', 'warn');
           }
         }
       }
@@ -904,13 +827,19 @@
       }
 
       // ============================================================
-      //  9. 點樣式產生器
+      //  9. 點樣式產生器（核心：支援點標記大小 + 標籤大小）
       // ============================================================
 
+      /**
+       * 產生點圖徵的樣式
+       * @param {string|function} fieldOrFn - 欄位名稱或取得文字的函式
+       * @param {number} radius - 點標記半徑
+       * @param {number} fontSize - 標籤文字大小
+       * @returns {Function} OpenLayers Style Function
+       */
       function createPointStyleFunction(fieldOrFn, radius, fontSize) {
         const r = Math.min(Math.max(radius || CONFIG.DEFAULT_POINT_RADIUS, CONFIG.MIN_POINT_RADIUS), CONFIG.MAX_POINT_RADIUS);
-        const size = Math.min(Math.max(fontSize || CONFIG.DEFAULT_POINT_LABEL_SIZE, CONFIG.MIN_POINT_LABEL_SIZE),
-        CONFIG.MAX_POINT_LABEL_SIZE);
+        const size = Math.min(Math.max(fontSize || CONFIG.DEFAULT_POINT_LABEL_SIZE, CONFIG.MIN_POINT_LABEL_SIZE), CONFIG.MAX_POINT_LABEL_SIZE);
 
         return function(feature) {
           const geometry = feature.getGeometry();
@@ -919,6 +848,7 @@
           const type = geometry.getType();
           if (type !== 'Point' && type !== 'MultiPoint') return null;
 
+          // 取得標籤文字
           let labelText = '';
           if (typeof fieldOrFn === 'function') {
             labelText = String(fieldOrFn(feature) || '');
@@ -929,6 +859,7 @@
             labelText = String(feature.get('name') || '');
           }
 
+          // 擷取前 50 個字元避免太長
           if (labelText.length > 50) {
             labelText = labelText.substring(0, 47) + '...';
           }
@@ -951,6 +882,10 @@
         };
       }
 
+      /**
+       * 更新圖層的點樣式（標記大小 + 標籤大小 + 標籤欄位）
+       * @param {Object} layerData
+       */
       function updatePointStyles(layerData) {
         const field = layerData.pointLabelField || 'name';
         const radius = layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS;
@@ -971,116 +906,33 @@
         layerData.layer.changed();
       }
 
+      /**
+       * 更新圖層透明度
+       */
       function updateLayerOpacity(layerData) {
         const opacity = layerData.opacity !== undefined ? layerData.opacity : CONFIG.DEFAULT_OPACITY;
         layerData.layer.setOpacity(opacity);
       }
 
       // ============================================================
-      //  10. GPX 解析器（新增）
+      //  10. KML 圖層功能
       // ============================================================
 
-      /**
-       * 解析 GPX 檔案，回傳 OpenLayers Feature 陣列
-       */
-      function parseGpx(gpxText) {
-        const gpxFormat = new ol.format.GPX();
-        const features = gpxFormat.readFeatures(gpxText, {
+      function createKmlLayerFromText(fileName, kmlText, visible = true, autoZoom = false, shouldSave = true) {
+        const sanitizedText = sanitizeKmlText(kmlText);
+
+        const kmlFormat = new ol.format.KML({
+          extractStyles: true,
+          showPointNames: false,
+        });
+
+        const features = kmlFormat.readFeatures(sanitizedText, {
           dataProjection: 'EPSG:4326',
           featureProjection: 'EPSG:3857',
         });
 
         if (!features || features.length === 0) {
-          throw new Error('GPX 檔案沒有讀到任何航點、航跡或航線。');
-        }
-
-        // 為 GPX 的點設定名稱（如果有的話）
-        features.forEach(f => {
-          const name = f.get('name') || f.get('desc') || '';
-          if (name) {
-            f.set('name', name);
-          }
-        });
-
-        return features;
-      }
-
-      // ============================================================
-      //  11. KMZ 解析器（新增）
-      // ============================================================
-
-      /**
-       * 解析 KMZ 檔案（ZIP 壓縮的 KML），回傳 KML 文字
-       */
-      async function parseKmz(arrayBuffer) {
-        try {
-          const zip = await JSZip.loadAsync(arrayBuffer);
-
-          // 尋找第一個 .kml 檔案
-          let kmlFile = null;
-          let kmlFileName = null;
-
-          for (const [name, file] of Object.entries(zip.files)) {
-            if (name.toLowerCase().endsWith('.kml') && !file.dir) {
-              kmlFile = file;
-              kmlFileName = name;
-              break;
-            }
-          }
-
-          if (!kmlFile) {
-            throw new Error('KMZ 檔案中找不到 KML 檔案。');
-          }
-
-          const kmlText = await kmlFile.async('text');
-          return kmlText;
-
-        } catch (error) {
-          if (error.message && error.message.includes('JSZip')) {
-            throw new Error('KMZ 解壓縮失敗，請確認檔案格式正確。');
-          }
-          throw error;
-        }
-      }
-
-      // ============================================================
-      //  12. KML / KMZ / GPX 統一載入器
-      // ============================================================
-
-      /**
-       * 從檔案內容建立圖層（自動判斷格式）
-       */
-      function createLayerFromContent(fileName, content, format, visible = true, autoZoom = false, shouldSave = true) {
-        let features = [];
-        let sourceText = content;
-        let isKmlFormat = false;
-
-        // 根據格式解析
-        if (format === 'gpx') {
-          // GPX 解析
-          features = parseGpx(content);
-          isKmlFormat = false;
-
-        } else if (format === 'kml' || format === 'kmz') {
-          // KML 解析（KMZ 已經解壓縮成 KML 文字）
-          const sanitizedText = sanitizeKmlText(content);
-          sourceText = sanitizedText;
-
-          const kmlFormat = new ol.format.KML({
-            extractStyles: true,
-            showPointNames: false,
-          });
-
-          features = kmlFormat.readFeatures(sanitizedText, {
-            dataProjection: 'EPSG:4326',
-            featureProjection: 'EPSG:3857',
-          });
-
-          isKmlFormat = true;
-        }
-
-        if (!features || features.length === 0) {
-          throw new Error('沒有讀到可用的圖徵資料。');
+          throw new Error('沒有讀到可用的點、線或面圖徵。');
         }
 
         // 收集所有欄位名稱
@@ -1092,34 +944,26 @@
         fieldSet.delete('geometry');
 
         const defaultField = fieldSet.has('name') ? 'name' :
-          fieldSet.has('description') ? 'description' :
-          fieldSet.has('title') ? 'title' :
-          fieldSet.has('標題') ? '標題' :
-          Array.from(fieldSet)[0] || '';
+                             fieldSet.has('description') ? 'description' :
+                             fieldSet.has('title') ? 'title' :
+                             fieldSet.has('標題') ? '標題' :
+                             Array.from(fieldSet)[0] || '';
 
-        // 檢查是否有點圖徵
-        const hasPoints = features.some(f => {
-          const g = f.getGeometry();
-          return g && (g.getType() === 'Point' || g.getType() === 'MultiPoint');
+        // 建立點樣式（預設）
+        const styleFn = createPointStyleFunction(
+          defaultField,
+          CONFIG.DEFAULT_POINT_RADIUS,
+          CONFIG.DEFAULT_POINT_LABEL_SIZE
+        );
+
+        features.forEach(feature => {
+          const geometry = feature.getGeometry();
+          if (!geometry) return;
+          const type = geometry.getType();
+          if (type === 'Point' || type === 'MultiPoint') {
+            feature.setStyle(styleFn);
+          }
         });
-
-        // 只有 KML 或 KMZ 的點才套用自訂樣式（GPX 點保留原始樣式）
-        if (isKmlFormat && hasPoints) {
-          const styleFn = createPointStyleFunction(
-            defaultField,
-            CONFIG.DEFAULT_POINT_RADIUS,
-            CONFIG.DEFAULT_POINT_LABEL_SIZE
-          );
-
-          features.forEach(feature => {
-            const geometry = feature.getGeometry();
-            if (!geometry) return;
-            const type = geometry.getType();
-            if (type === 'Point' || type === 'MultiPoint') {
-              feature.setStyle(styleFn);
-            }
-          });
-        }
 
         const source = new ol.source.Vector({
           features: features,
@@ -1133,11 +977,15 @@
           zIndex: 10 + AppState.kmlLayers.length,
         });
 
+        const hasPoints = features.some(f => {
+          const g = f.getGeometry();
+          return g && (g.getType() === 'Point' || g.getType() === 'MultiPoint');
+        });
+
         const layerData = {
           id: AppState.nextLayerId++,
           name: fileName,
-          format: format,
-          text: sourceText,
+          text: sanitizedText,
           layer: vectorLayer,
           source: source,
           opacity: CONFIG.DEFAULT_OPACITY,
@@ -1146,7 +994,6 @@
           pointLabelField: defaultField,
           availableFields: Array.from(fieldSet),
           hasPoints: hasPoints,
-          isKmlFormat: isKmlFormat,
           settingsExpanded: false,
         };
 
@@ -1161,10 +1008,6 @@
 
         return layerData;
       }
-
-      // ============================================================
-      //  13. 圖層管理功能
-      // ============================================================
 
       function updateKmlLayerZIndex() {
         AppState.kmlLayers.forEach((layerData, index) => {
@@ -1216,7 +1059,7 @@
         setStatus(`已調整圖層順序：${temp.name}`);
       }
 
-      function clearCurrentLayers() {
+      function clearCurrentKmlLayers() {
         AppState.kmlLayers.forEach(layerData => {
           AppState.map.removeLayer(layerData.layer);
         });
@@ -1226,7 +1069,7 @@
       }
 
       // ============================================================
-      //  14. 圖層清單渲染
+      //  11. 圖層清單渲染（含點標記大小控制）
       // ============================================================
 
       function renderLayerList() {
@@ -1234,7 +1077,7 @@
         el.innerHTML = '';
 
         if (AppState.kmlLayers.length === 0) {
-          el.innerHTML = '<div style="color:#666; font-size:14px;">尚未載入任何檔案。</div>';
+          el.innerHTML = '<div style="color:#666; font-size:14px;">尚未載入 KML。</div>';
           return;
         }
 
@@ -1242,7 +1085,7 @@
           const container = document.createElement('div');
           container.className = 'layerItem';
 
-          // ---- 第一行 ----
+          // ---- 第一行：基本控制 ----
           const row1 = document.createElement('div');
           row1.style.cssText = 'display:flex; align-items:center; gap:4px; width:100%; flex-wrap:wrap;';
 
@@ -1257,19 +1100,18 @@
 
           const nameSpan = document.createElement('span');
           nameSpan.className = 'layerName';
-          const icon = getFileIcon(layerData.format);
-          const badge = getFileBadge(layerData.format);
           const hasPointIcon = layerData.hasPoints ? '📍' : '🗺️';
-          nameSpan.innerHTML =
-            `[${index + 1}] ${icon} ${hasPointIcon} ${layerData.name} ${badge}`;
+          nameSpan.textContent = `[${index + 1}] ${hasPointIcon} ${layerData.name}`;
           nameSpan.title = '點擊展開/收合圖層設定';
 
+          // 點擊名稱切換設定區塊展開/收合
           nameSpan.addEventListener('click', function(e) {
             e.stopPropagation();
             const settings = container.querySelector('.layerSettings');
             if (settings) {
               const isVisible = settings.classList.toggle('visible');
               layerData.settingsExpanded = isVisible;
+              // 重新儲存狀態（但不觸發完整重繪）
               scheduleSaveMapState();
             }
           });
@@ -1299,7 +1141,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.type = 'button';
           removeBtn.textContent = '✕';
-          removeBtn.title = '移除此圖層';
+          removeBtn.title = '移除此 KML 圖層';
           removeBtn.style.color = '#b33';
           removeBtn.addEventListener('click', () => removeKmlLayer(layerData.id));
 
@@ -1311,7 +1153,7 @@
           row1.appendChild(removeBtn);
           container.appendChild(row1);
 
-          // ---- 第二行：設定區 ----
+          // ---- 第二行：圖層設定（預設收合） ----
           const settings = document.createElement('div');
           settings.className = 'layerSettings';
           if (layerData.settingsExpanded) {
@@ -1343,14 +1185,14 @@
           opacityLabel.appendChild(opacityValue);
           settings.appendChild(opacityLabel);
 
-          // 點設定（僅 KML/KMZ 且有點圖徵時顯示）
-          if (layerData.isKmlFormat && layerData.hasPoints) {
+          // 如果有點圖徵，顯示點設定
+          if (layerData.hasPoints) {
             const sep1 = document.createElement('span');
             sep1.className = 'sep';
             sep1.textContent = '｜';
             settings.appendChild(sep1);
 
-            // 點標記大小
+            // ---- 點標記大小（新增！） ----
             const radiusLabel = document.createElement('label');
             radiusLabel.innerHTML = '<span class="settingLabel">標記</span>';
             const radiusRange = document.createElement('input');
@@ -1380,7 +1222,7 @@
             sep2.textContent = '｜';
             settings.appendChild(sep2);
 
-            // 標籤欄位
+            // ---- 標籤欄位 ----
             const fieldLabel = document.createElement('label');
             fieldLabel.innerHTML = '<span class="settingLabel">欄位</span>';
             const fieldSelect = document.createElement('select');
@@ -1420,7 +1262,7 @@
             sep3.textContent = '｜';
             settings.appendChild(sep3);
 
-            // 標籤文字大小
+            // ---- 標籤文字大小 ----
             const sizeLabel = document.createElement('label');
             sizeLabel.innerHTML = '<span class="settingLabel">字體</span>';
             const sizeInput = document.createElement('input');
@@ -1450,73 +1292,30 @@
       }
 
       // ============================================================
-      //  15. 檔案載入器（支援 KML / KMZ / GPX）
+      //  12. KML 檔案載入
       // ============================================================
 
-      /**
-       * 載入單一檔案（自動判斷格式）
-       */
-      function loadSingleFile(file, index, total) {
+      function loadSingleKmlFile(file, index, total) {
         return new Promise((resolve) => {
-          if (!isValidGisFile(file)) {
-            setStatus(`略過不支援的檔案：${file.name}`, 'warn');
+          if (!isValidKmlFile(file)) {
+            setStatus(`略過非 KML 檔案：${file.name}`, 'warn');
             resolve(null);
             return;
           }
 
-          const format = getFileFormat(file);
           updateProgress(index - 1, total, file.name);
-          setStatus(`正在讀取：${file.name} (${format.toUpperCase()})`);
+          setStatus(`正在讀取 KML：${file.name}`);
 
           const reader = new FileReader();
-
-          reader.onload = async function(event) {
+          reader.onload = function(event) {
             try {
-              let content = event.target.result;
-              let finalFormat = format;
-
-              // KMZ 需要解壓縮
-              if (format === 'kmz') {
-                try {
-                  const kmlText = await parseKmz(event.target.result);
-                  content = kmlText;
-                  finalFormat = 'kml'; // 解壓縮後轉為 KML 處理
-                  setStatus(`已解壓縮 KMZ：${file.name}`);
-                } catch (zipError) {
-                  throw new Error(`KMZ 解壓縮失敗：${zipError.message}`);
-                }
-              }
-
-              // GPX 用文字讀取
-              if (format === 'gpx' && typeof content !== 'string') {
-                // 如果是 ArrayBuffer，轉為文字
-                const decoder = new TextDecoder('UTF-8');
-                content = decoder.decode(content);
-              }
-
-              // KML 如果是 ArrayBuffer，轉為文字
-              if ((format === 'kml' || finalFormat === 'kml') && typeof content !== 'string') {
-                const decoder = new TextDecoder('UTF-8');
-                content = decoder.decode(content);
-              }
-
-              const layerData = createLayerFromContent(
-                file.name,
-                content,
-                finalFormat,
-                true,
-                false,
-                true
+              const kmlText = event.target.result;
+              const layerData = createKmlLayerFromText(
+                file.name, kmlText, true, false, true
               );
-
               updateProgress(index, total, file.name);
-
-              const featureCount = layerData.source.getFeatures().length;
-              const typeLabel = finalFormat.toUpperCase();
-              setStatus(`已載入：${file.name} (${typeLabel})，共 ${featureCount} 個圖徵。`);
-
+              setStatus(`已載入 KML：${file.name}，共 ${layerData.source.getFeatures().length} 個圖徵。`);
               resolve(layerData);
-
             } catch (error) {
               console.error(error);
               setStatus(`載入失敗 ${file.name}：${error.message}`, 'error');
@@ -1524,36 +1323,29 @@
               resolve(null);
             }
           };
-
           reader.onerror = function() {
             setStatus(`檔案讀取失敗：${file.name}`, 'error');
             updateProgress(index, total, file.name);
             resolve(null);
           };
-
-          // 根據格式決定讀取方式
-          if (format === 'kmz') {
-            reader.readAsArrayBuffer(file);
-          } else {
-            reader.readAsText(file, 'UTF-8');
-          }
+          reader.readAsText(file, 'UTF-8');
         });
       }
 
-      async function handleFiles(files) {
+      async function handleKmlFiles(files) {
         const fileArray = Array.from(files);
         if (fileArray.length === 0) return;
 
-        const remaining = CONFIG.MAX_LAYERS - AppState.kmlLayers.length;
+        const remaining = CONFIG.MAX_KML_LAYERS - AppState.kmlLayers.length;
         if (remaining <= 0) {
-          alert(`目前最多只能同時載入 ${CONFIG.MAX_LAYERS} 個圖層。`);
+          alert(`目前最多只能同時載入 ${CONFIG.MAX_KML_LAYERS} 個 KML 圖層。`);
           DOM.fileInput.value = '';
           return;
         }
 
         let loadFiles = fileArray;
         if (fileArray.length > remaining) {
-          alert(`目前還可載入 ${remaining} 個檔案，超出的檔案不會載入。`);
+          alert(`目前還可載入 ${remaining} 個 KML，超出的檔案不會載入。`);
           loadFiles = fileArray.slice(0, remaining);
         }
 
@@ -1564,7 +1356,7 @@
         const total = loadFiles.length;
 
         for (let i = 0; i < total; i++) {
-          const result = await loadSingleFile(loadFiles[i], i + 1, total);
+          const result = await loadSingleKmlFile(loadFiles[i], i + 1, total);
           if (result) loadedCount++;
         }
 
@@ -1575,12 +1367,12 @@
           zoomToLayer(AppState.kmlLayers[0]);
         }
 
-        setStatus(`載入完成，成功載入 ${loadedCount} 個檔案。`);
+        setStatus(`載入完成，成功載入 ${loadedCount} 個 KML 圖層。`);
         DOM.fileInput.value = '';
       }
 
       // ============================================================
-      //  16. GPS 定位功能
+      //  13. GPS 定位功能
       // ============================================================
 
       function showUserLocation(coordinate, accuracy) {
@@ -1647,8 +1439,7 @@
 
             btn.disabled = false;
             btn.textContent = '📍 定位到我的位置';
-            setStatus(
-              `定位完成。經度：${lon.toFixed(6)}，緯度：${lat.toFixed(6)}，誤差約 ±${Math.round(accuracy)} 公尺。`);
+            setStatus(`定位完成。經度：${lon.toFixed(6)}，緯度：${lat.toFixed(6)}，誤差約 ±${Math.round(accuracy)} 公尺。`);
           },
           function(error) {
             btn.disabled = false;
@@ -1668,7 +1459,8 @@
             }
             setStatus(message, 'error');
             alert(message);
-          }, {
+          },
+          {
             enableHighAccuracy: true,
             timeout: CONFIG.LOCATION_TIMEOUT_MS,
             maximumAge: CONFIG.LOCATION_MAX_AGE_MS,
@@ -1677,7 +1469,7 @@
       }
 
       // ============================================================
-      //  17. 狀態還原
+      //  14. 狀態還原（擴充支援點標記大小）
       // ============================================================
 
       async function restoreSavedMapState(savedState) {
@@ -1688,26 +1480,26 @@
 
         try {
           if (Array.isArray(savedState.kmlLayers)) {
-            const restoreList = savedState.kmlLayers.slice(0, CONFIG.MAX_LAYERS);
+            const restoreList = savedState.kmlLayers.slice(0, CONFIG.MAX_KML_LAYERS);
 
             for (const savedLayer of restoreList) {
               if (!savedLayer.name || !savedLayer.text) continue;
               try {
-                const format = savedLayer.format || 'kml';
-                const layerData = createLayerFromContent(
+                const layerData = createKmlLayerFromText(
                   savedLayer.name,
                   savedLayer.text,
-                  format,
                   savedLayer.visible !== false,
                   false,
                   false
                 );
 
+                // 還原透明度
                 if (savedLayer.opacity !== undefined) {
                   layerData.opacity = savedLayer.opacity;
                   layerData.layer.setOpacity(savedLayer.opacity);
                 }
 
+                // 還原點設定
                 if (savedLayer.pointRadius !== undefined) {
                   layerData.pointRadius = savedLayer.pointRadius;
                 }
@@ -1718,12 +1510,12 @@
                   layerData.pointLabelField = savedLayer.pointLabelField;
                 }
 
-                if (layerData.isKmlFormat && layerData.hasPoints) {
+                if (layerData.hasPoints) {
                   updatePointStyles(layerData);
                 }
 
               } catch (error) {
-                console.warn(`無法還原：${savedLayer.name}`, error);
+                console.warn(`無法還原 KML：${savedLayer.name}`, error);
               }
             }
           }
@@ -1739,7 +1531,7 @@
           }
 
           if (AppState.kmlLayers.length > 0) {
-            setStatus(`已還原 ${AppState.kmlLayers.length} 個圖層。`);
+            setStatus(`已還原 ${AppState.kmlLayers.length} 個 KML 圖層。`);
           }
 
         } catch (error) {
@@ -1750,7 +1542,7 @@
       }
 
       // ============================================================
-      //  18. 事件綁定
+      //  15. 事件綁定
       // ============================================================
 
       function bindEvents() {
@@ -1780,7 +1572,7 @@
 
         DOM.fileInput.addEventListener('change', function(event) {
           if (event.target.files.length > 0) {
-            handleFiles(event.target.files);
+            handleKmlFiles(event.target.files);
           }
         });
 
@@ -1801,38 +1593,38 @@
 
         DOM.clearAllBtn.addEventListener('click', async function() {
           if (AppState.kmlLayers.length === 0) {
-            alert('目前沒有已載入的圖層。');
+            alert('目前沒有已載入的 KML 圖層。');
             return;
           }
-          if (!confirm('確定要清除目前所有圖層嗎？\n\n下次開啟網頁時，這些圖層不會再自動還原。')) return;
+          if (!confirm('確定要清除目前所有 KML 圖層嗎？\n\n下次開啟網頁時，這些 KML 不會再自動還原。')) return;
 
-          clearCurrentLayers();
+          clearCurrentKmlLayers();
           if (DOM.autoSaveCheckbox.checked) {
             await saveCurrentMapState();
           } else {
             await dbDelete(CONFIG.STATE_KEY);
           }
-          setStatus('已清除所有圖層。');
+          setStatus('已清除目前 KML 圖層。');
         });
 
         DOM.clearSavedDataBtn.addEventListener('click', async function() {
           if (!confirm(
-              '確定要清除快取資料嗎？\n\n將清除：\n' +
-              '• 上次選擇的 WMTS 底圖\n' +
-              '• 上次載入的圖層\n' +
-              '• 圖層顯示狀態與順序\n' +
-              '• 地圖中心位置與縮放設定\n\n' +
-              '不會刪除手機或電腦中的原始檔案。'
-            )) return;
+            '確定要清除快取資料嗎？\n\n將清除：\n' +
+            '• 上次選擇的 WMTS 底圖\n' +
+            '• 上次載入的 KML\n' +
+            '• KML 顯示狀態與圖層順序\n' +
+            '• 地圖中心位置與縮放設定\n\n' +
+            '不會刪除手機或電腦中的原始 KML 檔案。'
+          )) return;
 
           try {
             AppState.isRestoring = true;
             clearTimeout(AppState.saveTimer);
-            clearCurrentLayers();
+            clearCurrentKmlLayers();
             await dbDelete(CONFIG.STATE_KEY);
             localStorage.removeItem(CONFIG.AUTO_SAVE_KEY);
             DOM.autoSaveCheckbox.checked = true;
-            setStatus('已清除快取資料與之前載入的圖層。');
+            setStatus('已清除快取資料與之前載入的 KML。');
           } catch (error) {
             console.error(error);
             setStatus(`清除快取資料失敗：${error.message}`, 'error');
@@ -1843,7 +1635,7 @@
       }
 
       // ============================================================
-      //  19. 應用程式初始化
+      //  16. 應用程式初始化
       // ============================================================
 
       async function initApp() {
@@ -1868,7 +1660,7 @@
           bindEvents();
 
           if (AppState.kmlLayers.length === 0) {
-            setStatus('地圖已就緒，可載入 KML / KMZ / GPX 檔案。');
+            setStatus('地圖已就緒，可載入 KML 檔案。');
           }
 
         } catch (error) {
@@ -1880,15 +1672,10 @@
       }
 
       // ============================================================
-      //  20. 啟動
+      //  17. 啟動
       // ============================================================
 
       if (typeof ol !== 'undefined') {
-        // 檢查 JSZip 是否載入
-        if (typeof JSZip === 'undefined') {
-          console.warn('JSZip 未載入，KMZ 檔案將無法讀取。');
-          setStatus('⚠️ JSZip 未載入，KMZ 檔案無法讀取。請檢查網路連線。', 'warn');
-        }
         initApp();
       } else {
         console.error('OpenLayers 未正確載入。');
