@@ -1,0 +1,6 @@
+# 資料檔（僅本機測試使用，不上傳）
+*.kml
+.backup/
+
+# 本機啟動腳本
+start_server.bat

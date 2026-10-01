@@ -1,0 +1,446 @@
+/* ===== 全域重置 ===== */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, "Microsoft JhengHei", sans-serif;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background: #e8eef2;
+}
+
+/* ===== 控制面板 ===== */
+#controlPanel {
+  position: absolute;
+  z-index: 1000;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  width: 460px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 20px);
+  overflow: hidden;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.30);
+}
+
+#controlPanel.panel-right {
+  left: auto;
+  right: max(10px, env(safe-area-inset-right));
+}
+
+#panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 45px;
+  padding: 8px 10px 8px 13px;
+  box-sizing: border-box;
+  color: white;
+  background: #1f5f99;
+  cursor: pointer;
+  user-select: none;
+}
+
+#panelTitle {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#togglePanelBtn,
+#toggleSideBtn {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  padding: 0;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.70);
+  border-radius: 5px;
+  font-size: 20px;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+#panelContent {
+  max-height: calc(100vh - 75px);
+  padding: 10px 12px 15px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+#controlPanel.collapsed #panelContent {
+  display: none;
+}
+
+/* ===== 元件樣式 ===== */
+.sectionTitle {
+  margin: 10px 0 6px;
+  padding-top: 10px;
+  border-top: 1px solid #dddddd;
+  font-size: 14px;
+  font-weight: bold;
+}
+.sectionTitle:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+select,
+input[type="file"],
+button {
+  max-width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 15px;
+}
+
+select,
+input[type="file"] {
+  width: 100%;
+  margin-top: 5px;
+}
+
+button {
+  padding: 7px 10px;
+  color: #222;
+  background: #fafafa;
+  border: 1px solid #a9a9a9;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover {
+  background: #eeeeee;
+}
+button:active {
+  background: #dddddd;
+}
+button:disabled {
+  color: #777;
+  background: #dddddd;
+  cursor: not-allowed;
+}
+
+#locationBtn {
+  width: 100%;
+  margin-top: 5px;
+  color: white;
+  background: #26743b;
+  border-color: #1b5a2d;
+  font-weight: bold;
+}
+#locationBtn:hover {
+  background: #1e6130;
+}
+
+#clearAllBtn,
+#clearSavedDataBtn {
+  width: 100%;
+  margin-top: 7px;
+}
+
+#clearSavedDataBtn {
+  color: #9b1d1d;
+  background: #fff6f6;
+  border-color: #d5a4a4;
+}
+#clearSavedDataBtn:hover {
+  background: #ffe7e7;
+}
+
+.hint {
+  margin-top: 5px;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.autoSaveRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 7px 8px;
+  border: 1px solid #d6e2ec;
+  border-radius: 5px;
+  background: #f5faff;
+  cursor: pointer;
+  user-select: none;
+}
+.autoSaveRow input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ===== 進度條 ===== */
+#progressContainer {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f0f4f8;
+  border-radius: 6px;
+  border: 1px solid #d0d8e0;
+}
+#progressContainer.active {
+  display: block;
+}
+#progressBarWrapper {
+  width: 100%;
+  height: 8px;
+  background: #e0e4e8;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+#progressBar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #1f5f99, #4a8bc2);
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+#progressText {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+/* ===== 圖層清單 ===== */
+#layerList {
+  margin-top: 7px;
+}
+
+.layerItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 5px;
+  padding: 6px 4px;
+  border-bottom: 1px solid #e7e7e7;
+  font-size: 14px;
+  background: #fafcfe;
+}
+.layerItem:hover {
+  background: #f4f8fc;
+}
+
+.layerItem input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.layerName {
+  flex: 1;
+  min-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.layerItem button {
+  min-width: 28px;
+  padding: 3px 5px;
+  font-size: 12px;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.layerMoveBtn {
+  min-width: 26px !important;
+  padding: 2px 4px !important;
+  font-size: 15px !important;
+  font-weight: bold;
+  line-height: 1;
+}
+.layerMoveBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 圖層設定區 */
+.layerSettings {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  padding: 6px 0 2px 26px;
+  font-size: 12px;
+  color: #444;
+  border-top: 1px dashed #e0e8f0;
+  margin-top: 3px;
+  background: #f8fafc;
+  border-radius: 4px;
+}
+.layerSettings.visible {
+  display: flex;
+}
+
+.layerSettings label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.layerSettings input[type="range"] {
+  width: 72px;
+  height: 4px;
+  cursor: pointer;
+  accent-color: #1f5f99;
+}
+.layerSettings input[type="number"] {
+  width: 40px;
+  padding: 2px 3px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  text-align: center;
+}
+.layerSettings select {
+  width: auto;
+  margin: 0;
+  padding: 2px 4px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: white;
+}
+.layerSettings .settingLabel {
+  font-weight: 500;
+  color: #555;
+  margin-right: 2px;
+}
+.layerSettings .opacityValue,
+.layerSettings .sizeValue {
+  min-width: 28px;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+}
+.layerSettings .sep {
+  color: #ccc;
+  font-size: 14px;
+}
+
+/* ===== 狀態訊息 ===== */
+#status {
+  display: block;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #dddddd;
+  color: #333;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ===== 行動裝置響應 ===== */
+@media (max-width: 700px) {
+  #controlPanel {
+    top: max(6px, env(safe-area-inset-top));
+    left: max(6px, env(safe-area-inset-left));
+    width: calc(100vw - 12px);
+    max-width: none;
+    max-height: calc(100vh - 12px);
+    border-radius: 8px;
+  }
+  #panelHeader {
+    min-height: 42px;
+  }
+  #toggleSideBtn {
+    display: none;
+  }
+  #panelTitle {
+    font-size: 15px;
+  }
+  #panelContent {
+    max-height: calc(100vh - 62px);
+    padding-bottom: 22px;
+  }
+
+  select,
+  input[type="file"],
+  button {
+    font-size: 16px;
+  }
+
+  .layerItem {
+    padding: 6px 3px;
+    gap: 3px;
+  }
+  .layerItem button {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  .layerMoveBtn {
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 17px !important;
+  }
+  .layerName {
+    font-size: 13px;
+    min-width: 40px;
+  }
+  .layerSettings {
+    padding: 6px 0 4px 20px;
+    gap: 4px 6px;
+    font-size: 11px;
+  }
+  .layerSettings input[type="range"] {
+    width: 56px;
+  }
+  .layerSettings input[type="number"] {
+    width: 36px;
+    font-size: 12px;
+  }
+  .layerSettings .sep {
+    font-size: 12px;
+  }
+}
+
+/* ===== 支援格式標籤 ===== */
+.formatBadge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.formatBadge.kml {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+.formatBadge.kmz {
+  background: #fef3e8;
+  color: #e8741a;
+}
+.formatBadge.gpx {
+  background: #e8fef0;
+  color: #1a8e3c;
+}

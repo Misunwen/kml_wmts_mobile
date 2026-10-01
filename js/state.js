@@ -1,0 +1,32 @@
+export const DOM = {
+  controlPanel: document.getElementById('controlPanel'),
+  panelHeader: document.getElementById('panelHeader'),
+  togglePanelBtn: document.getElementById('togglePanelBtn'),
+  toggleSideBtn: document.getElementById('toggleSideBtn'),
+  wmtsLayerSelect: document.getElementById('wmtsLayerSelect'),
+  locationBtn: document.getElementById('locationBtn'),
+  fileInput: document.getElementById('fileInput'),
+  autoSaveCheckbox: document.getElementById('autoSaveCheckbox'),
+  layerList: document.getElementById('layerList'),
+  clearAllBtn: document.getElementById('clearAllBtn'),
+  clearSavedDataBtn: document.getElementById('clearSavedDataBtn'),
+  status: document.getElementById('status'),
+  progressContainer: document.getElementById('progressContainer'),
+  progressBar: document.getElementById('progressBar'),
+  progressText: document.getElementById('progressText'),
+  mapContainer: document.getElementById('map'),
+};
+
+export const AppState = {
+  database: null,
+  wmtsCapabilities: null,
+  wmtsLayer: null,
+  userLocationLayer: null,
+  kmlLayers: [],
+  nextLayerId: 1,
+  isRestoring: false,
+  saveTimer: null,
+  locationWatchId: null,
+  map: null,
+  view: null,
+};
