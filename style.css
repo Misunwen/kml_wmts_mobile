@@ -151,10 +151,22 @@ button:disabled {
   background: #1e6130;
 }
 
-#clearAllBtn,
-#clearSavedDataBtn {
-  width: 100%;
+/* 兩顆清除鈕並排並固定在面板底部，手機不用捲動就看得到 */
+.clearButtons {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
   margin-top: 7px;
+  padding: 6px 0;
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #e2e8ee;
+}
+
+.clearButtons button {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-top: 0;
 }
 
 #clearSavedDataBtn {
