@@ -9,6 +9,53 @@ function createTextKey() {
   return 't' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
+function colorToCss(color) {
+  if (!color) return null;
+  if (typeof color === 'string') return color;
+  if (Array.isArray(color)) {
+    const a = color[3] !== undefined ? color[3] : 1;
+    return `rgba(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)}, ${a})`;
+  }
+  return null;
+}
+
+// 若圖層中所有圖徵共用同一組填色/邊框，回傳等價的 WebGL 平面樣式；否則回傳 null。
+// 保證不改顏色：只要樣式不一致，就退回 canvas 繪製。
+function getUniformFlatStyle(features) {
+  let flat = null;
+  let signature = null;
+
+  for (const feature of features) {
+    const style = feature.getStyle();
+    if (!style || Array.isArray(style)) return null;
+
+    const fill = style.getFill ? style.getFill() : null;
+    const stroke = style.getStroke ? style.getStroke() : null;
+    const fillColor = fill ? colorToCss(fill.getColor()) : null;
+    const strokeColor = stroke ? colorToCss(stroke.getColor()) : null;
+    const strokeWidth = stroke && stroke.getWidth() ? stroke.getWidth() : 0;
+
+    const hasFill = !!fillColor;
+    const hasStroke = !!strokeColor && strokeWidth > 0;
+    if (!hasFill && !hasStroke) return null;
+
+    const sig = `${fillColor}|${strokeColor}|${strokeWidth}`;
+    if (signature === null) {
+      signature = sig;
+      flat = {};
+      if (hasFill) flat['fill-color'] = fillColor;
+      if (hasStroke) {
+        flat['stroke-color'] = strokeColor;
+        flat['stroke-width'] = strokeWidth;
+      }
+    } else if (signature !== sig) {
+      return null;
+    }
+  }
+
+  return flat;
+}
+
 export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
   const r = Math.min(Math.max(radius || CONFIG.DEFAULT_POINT_RADIUS, CONFIG.MIN_POINT_RADIUS), CONFIG.MAX_POINT_RADIUS);
   const size = Math.min(Math.max(fontSize || CONFIG.DEFAULT_POINT_LABEL_SIZE, CONFIG.MIN_POINT_LABEL_SIZE),
@@ -161,17 +208,33 @@ export function createLayerFromContent(fileName, content, format, visible = true
     });
   }
 
+  // 大型、樣式一致的多邊形/線圖層改用 WebGL 繪製，提升縮放/平移效能。
+  // 樣式由圖徵實際解析結果推導，顏色與線寬與 canvas 完全相同。
+  let webglStyle = null;
+  if (!hasPoints &&
+      features.length >= CONFIG.WEBGL_MIN_FEATURES &&
+      typeof ol.layer.WebGLVector === 'function') {
+    webglStyle = getUniformFlatStyle(features);
+  }
+
   const source = new ol.source.Vector({
     features: features,
-    declutter: true,
+    declutter: hasPoints,
   });
 
-  const vectorLayer = new ol.layer.Vector({
+  const layerOptions = {
     source: source,
     visible: visible,
     opacity: CONFIG.DEFAULT_OPACITY,
     zIndex: 10 + AppState.kmlLayers.length,
-  });
+  };
+
+  const vectorLayer = webglStyle
+    ? new ol.layer.WebGLVector(Object.assign({
+        style: webglStyle,
+        disableHitDetection: true,
+      }, layerOptions))
+    : new ol.layer.Vector(layerOptions);
 
   const layerData = {
     id: AppState.nextLayerId++,
@@ -189,6 +252,7 @@ export function createLayerFromContent(fileName, content, format, visible = true
     availableFields: Array.from(fieldSet),
     hasPoints: hasPoints,
     isKmlFormat: isKmlFormat,
+    isWebGL: !!webglStyle,
     settingsExpanded: false,
   };
 
@@ -229,6 +293,9 @@ export function removeKmlLayer(id) {
 
   const layerData = AppState.kmlLayers[index];
   AppState.map.removeLayer(layerData.layer);
+  if (layerData.isWebGL && typeof layerData.layer.dispose === 'function') {
+    layerData.layer.dispose();
+  }
   AppState.kmlLayers.splice(index, 1);
   deleteLayerText(layerData).catch(error => console.warn('圖層文字刪除失敗：', error));
 
@@ -258,6 +325,9 @@ export function moveKmlLayer(id, direction) {
 export function clearCurrentLayers() {
   AppState.kmlLayers.forEach(layerData => {
     AppState.map.removeLayer(layerData.layer);
+    if (layerData.isWebGL && typeof layerData.layer.dispose === 'function') {
+      layerData.layer.dispose();
+    }
     deleteLayerText(layerData).catch(error => console.warn('圖層文字刪除失敗：', error));
   });
   AppState.kmlLayers = [];

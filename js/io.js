@@ -61,7 +61,8 @@ export function loadSingleFile(file, index, total) {
 
         const featureCount = layerData.source.getFeatures().length;
         const typeLabel = finalFormat.toUpperCase();
-        setStatus(`已載入：${file.name} (${typeLabel})，共 ${featureCount} 個圖徵。`);
+        const accel = layerData.isWebGL ? '（WebGL 加速）' : '';
+        setStatus(`已載入：${file.name} (${typeLabel})${accel}，共 ${featureCount} 個圖徵。`);
 
         resolve(layerData);
 
