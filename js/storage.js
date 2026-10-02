@@ -115,6 +115,10 @@ function getCurrentMapState() {
       pointRadius: layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS,
       pointLabelSize: layerData.pointLabelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE,
       pointLabelField: layerData.pointLabelField || 'name',
+      strokeColor: layerData.strokeColor || null,
+      strokeWidth: layerData.strokeWidth || null,
+      fillEnabled: !!layerData.fillEnabled,
+      styleOverridden: !!layerData.styleOverridden,
     })),
   };
 }

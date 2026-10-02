@@ -353,6 +353,21 @@ button:disabled {
   border-radius: 3px;
   text-align: center;
 }
+.layerSettings input[type="color"] {
+  width: 34px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+.layerSettings input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
 .layerSettings select {
   width: auto;
   margin: 0;

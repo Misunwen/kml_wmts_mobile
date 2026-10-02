@@ -4,6 +4,7 @@ import { getFileIcon, getFileBadge, setStatus } from './utils.js';
 import {
   updatePointStyles,
   updateLayerOpacity,
+  applyLayerStyle,
   zoomToLayer,
   removeKmlLayer,
   moveKmlLayer,
@@ -31,6 +32,20 @@ function schedulePointStyleUpdate(layerData) {
     const layers = Array.from(pendingPointStyleLayers);
     pendingPointStyleLayers.clear();
     layers.forEach(updatePointStyles);
+  });
+}
+
+let layerStyleRaf = null;
+const pendingLayerStyleLayers = new Set();
+
+function scheduleLayerStyleUpdate(layerData) {
+  pendingLayerStyleLayers.add(layerData);
+  if (layerStyleRaf !== null) return;
+  layerStyleRaf = requestAnimationFrame(() => {
+    layerStyleRaf = null;
+    const layers = Array.from(pendingLayerStyleLayers);
+    pendingLayerStyleLayers.clear();
+    layers.forEach(applyLayerStyle);
   });
 }
 
@@ -148,6 +163,79 @@ export function renderLayerList() {
     opacityLabel.appendChild(opacityRange);
     opacityLabel.appendChild(opacityValue);
     settings.appendChild(opacityLabel);
+
+    // 線/面圖層樣式（線粗、顏色、是否填滿）
+    if (!layerData.hasPoints) {
+      const sepStroke = document.createElement('span');
+      sepStroke.className = 'sep';
+      sepStroke.textContent = '｜';
+      settings.appendChild(sepStroke);
+
+      const widthLabel = document.createElement('label');
+      widthLabel.innerHTML = '<span class="settingLabel">線粗</span>';
+      const widthRange = document.createElement('input');
+      widthRange.type = 'range';
+      widthRange.min = String(CONFIG.MIN_STROKE_WIDTH);
+      widthRange.max = String(CONFIG.MAX_STROKE_WIDTH);
+      widthRange.value = String(layerData.strokeWidth || CONFIG.DEFAULT_STROKE_WIDTH);
+      widthRange.step = '1';
+      const widthValue = document.createElement('span');
+      widthValue.className = 'sizeValue';
+      widthValue.textContent = widthRange.value + 'px';
+
+      widthRange.addEventListener('input', function() {
+        const val = parseInt(this.value);
+        widthValue.textContent = val + 'px';
+        layerData.strokeWidth = val;
+        layerData.styleOverridden = true;
+        scheduleLayerStyleUpdate(layerData);
+        scheduleSaveMapState();
+      });
+
+      widthLabel.appendChild(widthRange);
+      widthLabel.appendChild(widthValue);
+      settings.appendChild(widthLabel);
+
+      const sepColor = document.createElement('span');
+      sepColor.className = 'sep';
+      sepColor.textContent = '｜';
+      settings.appendChild(sepColor);
+
+      const colorLabel = document.createElement('label');
+      colorLabel.innerHTML = '<span class="settingLabel">顏色</span>';
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = layerData.strokeColor || CONFIG.DEFAULT_STROKE_COLOR;
+      colorInput.title = '線條顏色';
+      colorInput.addEventListener('input', function() {
+        layerData.strokeColor = this.value;
+        layerData.styleOverridden = true;
+        scheduleLayerStyleUpdate(layerData);
+        scheduleSaveMapState();
+      });
+      colorLabel.appendChild(colorInput);
+      settings.appendChild(colorLabel);
+
+      const sepFill = document.createElement('span');
+      sepFill.className = 'sep';
+      sepFill.textContent = '｜';
+      settings.appendChild(sepFill);
+
+      const fillLabel = document.createElement('label');
+      fillLabel.innerHTML = '<span class="settingLabel">填滿</span>';
+      const fillInput = document.createElement('input');
+      fillInput.type = 'checkbox';
+      fillInput.checked = !!layerData.fillEnabled;
+      fillInput.title = '以同色半透明填滿';
+      fillInput.addEventListener('change', function() {
+        layerData.fillEnabled = this.checked;
+        layerData.styleOverridden = true;
+        scheduleLayerStyleUpdate(layerData);
+        scheduleSaveMapState();
+      });
+      fillLabel.appendChild(fillInput);
+      settings.appendChild(fillLabel);
+    }
 
     // 點設定（僅 KML/KMZ 且有點圖徵時顯示）
     if (layerData.isKmlFormat && layerData.hasPoints) {

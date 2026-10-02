@@ -9,59 +9,109 @@ function createTextKey() {
   return 't' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-function colorToCss(color) {
+function rgbToHex(r, g, b) {
+  const h = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + h(r) + h(g) + h(b);
+}
+
+function colorToHex(color) {
   if (!color) return null;
-  if (typeof color === 'string') return color;
-  if (Array.isArray(color)) {
-    // OpenLayers 顏色陣列格式：[r, g, b, a]，r/g/b 為 0-255、a 為 0-1。
-    const a = color[3] !== undefined ? color[3] : 1;
-    return `rgba(${Math.round(color[0])}, ${Math.round(color[1])}, ${Math.round(color[2])}, ${a})`;
+  if (typeof color === 'string') {
+    if (color[0] === '#') return color.length >= 7 ? color.slice(0, 7) : color;
+    const m = color.match(/rgba?\(([^)]+)\)/i);
+    if (m) {
+      const p = m[1].split(',').map(parseFloat);
+      return rgbToHex(p[0], p[1], p[2]);
+    }
+    return null;
   }
+  // OpenLayers 顏色陣列：[r, g, b, a]，r/g/b 為 0-255、a 為 0-1。
+  if (Array.isArray(color)) return rgbToHex(color[0], color[1], color[2]);
   return null;
 }
 
-// 若圖層中所有圖徵共用同一組填色/邊框，回傳等價的 WebGL 平面樣式；否則回傳 null。
-// 保證不改顏色：只要樣式不一致，就退回 canvas 繪製。
-function getUniformFlatStyle(features, resolution) {
-  let flat = null;
+function hexToRgba(hex, alpha) {
+  const h = String(hex).replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16) || 0;
+  const g = parseInt(h.slice(2, 4), 16) || 0;
+  const b = parseInt(h.slice(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// KML 圖徵的樣式可能是 Style、Style 陣列或樣式函式，統一取出一個含填色/邊框的 Style。
+function resolveFeatureStyle(feature, resolution) {
+  let style = feature.getStyle();
+  if (typeof style === 'function') style = style(feature, resolution);
+  if (Array.isArray(style)) {
+    style = style.find(s => s &&
+      ((s.getFill && s.getFill()) || (s.getStroke && s.getStroke()))) || style[0];
+  }
+  return style || null;
+}
+
+// 分析圖層樣式：是否所有圖徵一致，以及取一組代表值（供預設值與 WebGL 判斷）。
+function analyzeStyles(features, resolution) {
+  const result = { uniform: true, strokeColor: null, strokeWidth: 0, fillColor: null, hasFill: false };
   let signature = null;
 
   for (const feature of features) {
-    let style = feature.getStyle();
-    if (typeof style === 'function') {
-      style = style(feature, resolution);
-    }
-    if (Array.isArray(style)) {
-      style = style.find(s => s &&
-        ((s.getFill && s.getFill()) || (s.getStroke && s.getStroke()))) || style[0];
-    }
-    if (!style) return null;
+    const style = resolveFeatureStyle(feature, resolution);
+    if (!style) { result.uniform = false; return result; }
 
     const fill = style.getFill ? style.getFill() : null;
     const stroke = style.getStroke ? style.getStroke() : null;
-    const fillColor = fill ? colorToCss(fill.getColor()) : null;
-    const strokeColor = stroke ? colorToCss(stroke.getColor()) : null;
+    const fillColor = fill ? colorToHex(fill.getColor()) : null;
+    const strokeColor = stroke ? colorToHex(stroke.getColor()) : null;
     const strokeWidth = stroke && stroke.getWidth() ? stroke.getWidth() : 0;
-
-    const hasFill = !!fillColor;
-    const hasStroke = !!strokeColor && strokeWidth > 0;
-    if (!hasFill && !hasStroke) return null;
 
     const sig = `${fillColor}|${strokeColor}|${strokeWidth}`;
     if (signature === null) {
       signature = sig;
-      flat = {};
-      if (hasFill) flat['fill-color'] = fillColor;
-      if (hasStroke) {
-        flat['stroke-color'] = strokeColor;
-        flat['stroke-width'] = strokeWidth;
-      }
-    } else if (signature !== sig) {
-      return null;
+      result.fillColor = fillColor;
+      result.hasFill = !!fillColor;
+      result.strokeColor = strokeColor;
+      result.strokeWidth = strokeWidth;
+    } else if (sig !== signature) {
+      result.uniform = false;
+      return result;
     }
   }
+  return result;
+}
 
+function flatStyleFor(layerData) {
+  const flat = {
+    'stroke-color': layerData.strokeColor,
+    'stroke-width': layerData.strokeWidth,
+  };
+  if (layerData.fillEnabled) {
+    flat['fill-color'] = hexToRgba(layerData.strokeColor, CONFIG.DEFAULT_FILL_OPACITY);
+  }
   return flat;
+}
+
+function vectorStyleFor(layerData) {
+  const options = {
+    stroke: new ol.style.Stroke({ color: layerData.strokeColor, width: layerData.strokeWidth }),
+  };
+  if (layerData.fillEnabled) {
+    options.fill = new ol.style.Fill({ color: hexToRgba(layerData.strokeColor, CONFIG.DEFAULT_FILL_OPACITY) });
+  }
+  return new ol.style.Style(options);
+}
+
+// 套用使用者調整後的樣式（線粗／顏色／是否填滿）。
+export function applyLayerStyle(layerData) {
+  if (layerData.isWebGL) {
+    layerData.layer.setStyle(flatStyleFor(layerData));
+    return;
+  }
+  // canvas：需先清除圖徵自帶樣式，圖層樣式才會生效（會統一成單一顏色）。
+  if (!layerData.featureStylesCleared) {
+    layerData.source.getFeatures().forEach(f => f.setStyle(null));
+    layerData.featureStylesCleared = true;
+  }
+  layerData.layer.setStyle(vectorStyleFor(layerData));
 }
 
 export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
@@ -216,15 +266,18 @@ export function createLayerFromContent(fileName, content, format, visible = true
     });
   }
 
-  // 大型、樣式一致的多邊形/線圖層改用 WebGL 繪製，提升縮放/平移效能。
-  // 樣式由圖徵實際解析結果推導，顏色與線寬與 canvas 完全相同。
-  let webglStyle = null;
-  if (!hasPoints &&
-      features.length >= CONFIG.WEBGL_MIN_FEATURES &&
-      typeof ol.layer.WebGLVector === 'function') {
-    const resolution = AppState.view ? AppState.view.getResolution() : 1;
-    webglStyle = getUniformFlatStyle(features, resolution);
-  }
+  // 非點圖層：分析樣式，取統一樣式作為預設線色/線粗/填滿，並判斷是否可用 WebGL。
+  const resolution = AppState.view ? AppState.view.getResolution() : 1;
+  const styleInfo = hasPoints ? null : analyzeStyles(features, resolution);
+  const strokeColor = (styleInfo && styleInfo.strokeColor) || CONFIG.DEFAULT_STROKE_COLOR;
+  const strokeWidth = (styleInfo && styleInfo.strokeWidth) || CONFIG.DEFAULT_STROKE_WIDTH;
+  const fillEnabled = !!(styleInfo && styleInfo.hasFill);
+
+  // 大型、樣式一致的多邊形/線圖層改用 WebGL，提升縮放/平移效能。
+  const useWebGL = !hasPoints &&
+    features.length >= CONFIG.WEBGL_MIN_FEATURES &&
+    !!styleInfo && styleInfo.uniform &&
+    typeof ol.layer.WebGLVector === 'function';
 
   const source = new ol.source.Vector({
     features: features,
@@ -238,9 +291,10 @@ export function createLayerFromContent(fileName, content, format, visible = true
     zIndex: 10 + AppState.kmlLayers.length,
   };
 
-  const vectorLayer = webglStyle
+  const styleSeed = { strokeColor: strokeColor, strokeWidth: strokeWidth, fillEnabled: fillEnabled };
+  const vectorLayer = useWebGL
     ? new ol.layer.WebGLVector(Object.assign({
-        style: webglStyle,
+        style: flatStyleFor(styleSeed),
         disableHitDetection: true,
       }, layerOptions))
     : new ol.layer.Vector(layerOptions);
@@ -261,7 +315,12 @@ export function createLayerFromContent(fileName, content, format, visible = true
     availableFields: Array.from(fieldSet),
     hasPoints: hasPoints,
     isKmlFormat: isKmlFormat,
-    isWebGL: !!webglStyle,
+    isWebGL: useWebGL,
+    strokeColor: strokeColor,
+    strokeWidth: strokeWidth,
+    fillEnabled: fillEnabled,
+    styleOverridden: false,
+    featureStylesCleared: false,
     settingsExpanded: false,
   };
 

@@ -3,7 +3,7 @@ import { AppState, DOM } from './state.js';
 import { setStatus } from './utils.js';
 import { openDatabase, dbGet, getAutoSaveEnabled, loadLayerText } from './storage.js';
 import { createMap, loadWmtsCapabilities } from './map.js';
-import { createLayerFromContent, updatePointStyles, zoomToLayer } from './layers.js';
+import { createLayerFromContent, updatePointStyles, zoomToLayer, applyLayerStyle } from './layers.js';
 import { bindEvents } from './ui.js';
 
 DOM.appVersion.textContent = 'v' + CONFIG.APP_VERSION;
@@ -58,6 +58,19 @@ async function restoreSavedMapState(savedState) {
           }
           if (savedLayer.pointLabelField !== undefined) {
             layerData.pointLabelField = savedLayer.pointLabelField;
+          }
+          if (savedLayer.strokeColor) {
+            layerData.strokeColor = savedLayer.strokeColor;
+          }
+          if (savedLayer.strokeWidth) {
+            layerData.strokeWidth = savedLayer.strokeWidth;
+          }
+          if (savedLayer.fillEnabled !== undefined) {
+            layerData.fillEnabled = savedLayer.fillEnabled;
+          }
+          if (savedLayer.styleOverridden) {
+            layerData.styleOverridden = true;
+            applyLayerStyle(layerData);
           }
 
           if (layerData.isKmlFormat && layerData.hasPoints) {
