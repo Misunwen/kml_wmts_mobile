@@ -24,6 +24,8 @@ body {
   width: 460px;
   max-width: calc(100vw - 20px);
   max-height: calc(100vh - 20px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
   border-radius: 10px;
@@ -76,7 +78,8 @@ body {
 }
 
 #panelContent {
-  max-height: calc(100vh - 75px);
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 10px 12px 15px;
   overflow-y: auto;
   box-sizing: border-box;
@@ -346,13 +349,13 @@ button:disabled {
 
 /* ===== 狀態訊息 ===== */
 #status {
-  display: block;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid #dddddd;
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border-top: 1px solid #dbe4ec;
+  background: #eef4fa;
   color: #333;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
   word-break: break-word;
 }
 
@@ -376,7 +379,6 @@ button:disabled {
     font-size: 15px;
   }
   #panelContent {
-    max-height: calc(100vh - 62px);
     padding-bottom: 22px;
   }
 
