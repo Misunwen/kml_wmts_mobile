@@ -13,21 +13,29 @@ function colorToCss(color) {
   if (!color) return null;
   if (typeof color === 'string') return color;
   if (Array.isArray(color)) {
+    // OpenLayers 顏色陣列格式：[r, g, b, a]，r/g/b 為 0-255、a 為 0-1。
     const a = color[3] !== undefined ? color[3] : 1;
-    return `rgba(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)}, ${a})`;
+    return `rgba(${Math.round(color[0])}, ${Math.round(color[1])}, ${Math.round(color[2])}, ${a})`;
   }
   return null;
 }
 
 // 若圖層中所有圖徵共用同一組填色/邊框，回傳等價的 WebGL 平面樣式；否則回傳 null。
 // 保證不改顏色：只要樣式不一致，就退回 canvas 繪製。
-function getUniformFlatStyle(features) {
+function getUniformFlatStyle(features, resolution) {
   let flat = null;
   let signature = null;
 
   for (const feature of features) {
-    const style = feature.getStyle();
-    if (!style || Array.isArray(style)) return null;
+    let style = feature.getStyle();
+    if (typeof style === 'function') {
+      style = style(feature, resolution);
+    }
+    if (Array.isArray(style)) {
+      style = style.find(s => s &&
+        ((s.getFill && s.getFill()) || (s.getStroke && s.getStroke()))) || style[0];
+    }
+    if (!style) return null;
 
     const fill = style.getFill ? style.getFill() : null;
     const stroke = style.getStroke ? style.getStroke() : null;
@@ -214,7 +222,8 @@ export function createLayerFromContent(fileName, content, format, visible = true
   if (!hasPoints &&
       features.length >= CONFIG.WEBGL_MIN_FEATURES &&
       typeof ol.layer.WebGLVector === 'function') {
-    webglStyle = getUniformFlatStyle(features);
+    const resolution = AppState.view ? AppState.view.getResolution() : 1;
+    webglStyle = getUniformFlatStyle(features, resolution);
   }
 
   const source = new ol.source.Vector({
