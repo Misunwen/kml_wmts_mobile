@@ -1,6 +1,7 @@
 export const DOM = {
   controlPanel: document.getElementById('controlPanel'),
   panelHeader: document.getElementById('panelHeader'),
+  appVersion: document.getElementById('appVersion'),
   togglePanelBtn: document.getElementById('togglePanelBtn'),
   toggleSideBtn: document.getElementById('toggleSideBtn'),
   wmtsLayerSelect: document.getElementById('wmtsLayerSelect'),

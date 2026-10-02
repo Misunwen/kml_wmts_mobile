@@ -6,6 +6,8 @@ import { createMap, loadWmtsCapabilities } from './map.js';
 import { createLayerFromContent, updatePointStyles, zoomToLayer } from './layers.js';
 import { bindEvents } from './ui.js';
 
+DOM.appVersion.textContent = 'v' + CONFIG.APP_VERSION;
+
 async function restoreSavedMapState(savedState) {
   if (!savedState) return;
   if (!DOM.autoSaveCheckbox.checked) return;
