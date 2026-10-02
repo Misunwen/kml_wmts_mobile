@@ -85,7 +85,8 @@ body {
   box-sizing: border-box;
 }
 
-#controlPanel.collapsed #panelContent {
+#controlPanel.collapsed #panelContent,
+#controlPanel.collapsed #status {
   display: none;
 }
 
@@ -445,4 +446,8 @@ button:disabled {
 .formatBadge.gpx {
   background: #e8fef0;
   color: #1a8e3c;
+}
+.formatBadge.webgl {
+  background: #eae6ff;
+  color: #5b3fd6;
 }

@@ -124,6 +124,8 @@ export async function handleFiles(files) {
     zoomToLayer(AppState.kmlLayers[0]);
   }
 
-  setStatus(`載入完成，成功載入 ${loadedCount} 個檔案。`);
-  DOM.fileInput.value = '';
+    const webglCount = AppState.kmlLayers.filter(layerData => layerData.isWebGL).length;
+    const accel = webglCount > 0 ? `（WebGL 加速 ${webglCount} 個）` : '';
+    setStatus(`載入完成，成功載入 ${loadedCount} 個檔案${accel}。`);
+    DOM.fileInput.value = '';
 }

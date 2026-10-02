@@ -64,9 +64,10 @@ export function renderLayerList() {
     nameSpan.className = 'layerName';
     const icon = getFileIcon(layerData.format);
     const badge = getFileBadge(layerData.format);
+    const webglBadge = layerData.isWebGL ? '<span class="formatBadge webgl">WebGL</span>' : '';
     const hasPointIcon = layerData.hasPoints ? '📍' : '🗺️';
     nameSpan.innerHTML =
-      `[${index + 1}] ${icon} ${hasPointIcon} ${layerData.name} ${badge}`;
+      `[${index + 1}] ${icon} ${hasPointIcon} ${layerData.name} ${badge}${webglBadge}`;
     nameSpan.title = '點擊展開/收合圖層設定';
 
     nameSpan.addEventListener('click', function(e) {
