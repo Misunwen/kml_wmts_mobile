@@ -24,6 +24,7 @@ body {
   width: 460px;
   max-width: calc(100vw - 20px);
   max-height: calc(100vh - 20px);
+  max-height: calc(100dvh - 20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -380,6 +381,7 @@ button:disabled {
     width: calc(100vw - 12px);
     max-width: none;
     max-height: calc(100vh - 12px);
+    max-height: calc(100dvh - 12px);
     border-radius: 8px;
   }
   #panelHeader {
