@@ -68,7 +68,13 @@ async function restoreSavedMapState(savedState) {
           if (savedLayer.fillEnabled !== undefined) {
             layerData.fillEnabled = savedLayer.fillEnabled;
           }
-          if (savedLayer.styleOverridden) {
+          if (savedLayer.labelField !== undefined) {
+            layerData.labelField = savedLayer.labelField;
+          }
+          if (savedLayer.labelSize !== undefined) {
+            layerData.labelSize = savedLayer.labelSize;
+          }
+          if (savedLayer.styleOverridden || layerData.labelField) {
             layerData.styleOverridden = true;
             applyLayerStyle(layerData);
           }

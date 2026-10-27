@@ -118,6 +118,8 @@ function getCurrentMapState() {
       strokeColor: layerData.strokeColor || null,
       strokeWidth: layerData.strokeWidth || null,
       fillEnabled: !!layerData.fillEnabled,
+      labelField: layerData.labelField || '',
+      labelSize: layerData.labelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE,
       styleOverridden: !!layerData.styleOverridden,
     })),
   };

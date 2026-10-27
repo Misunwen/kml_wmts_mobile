@@ -90,17 +90,59 @@ function flatStyleFor(layerData) {
   return flat;
 }
 
-function vectorStyleFor(layerData) {
-  const options = {
-    stroke: new ol.style.Stroke({ color: layerData.strokeColor, width: layerData.strokeWidth }),
-  };
-  if (layerData.fillEnabled) {
-    options.fill = new ol.style.Fill({ color: hexToRgba(layerData.strokeColor, CONFIG.DEFAULT_FILL_OPACITY) });
-  }
-  return new ol.style.Style(options);
+function formatLabelValue(value) {
+  if (value === undefined || value === null) return '';
+  let text = String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length > 50) text = text.substring(0, 47) + '...';
+  return text;
 }
 
-// 套用使用者調整後的樣式（線粗／顏色／是否填滿）。
+// canvas 用：建立含填色/邊框與（多邊形）文字標籤的快取樣式函式。
+function createCanvasStyleFunction(layerData) {
+  const fill = layerData.fillEnabled
+    ? new ol.style.Fill({ color: hexToRgba(layerData.strokeColor, CONFIG.DEFAULT_FILL_OPACITY) })
+    : null;
+  const stroke = new ol.style.Stroke({ color: layerData.strokeColor, width: layerData.strokeWidth });
+  const textFill = new ol.style.Fill({ color: '#202020' });
+  const textStroke = new ol.style.Stroke({ color: '#ffffff', width: 3 });
+  const size = Math.min(Math.max(layerData.labelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE, CONFIG.MIN_POINT_LABEL_SIZE), CONFIG.MAX_POINT_LABEL_SIZE);
+  const font = `bold ${size}px Arial, Microsoft JhengHei, sans-serif`;
+  const cache = new Map();
+
+  return function(feature) {
+    const geometry = feature.getGeometry();
+    const isPolygon = geometry && (geometry.getType() === 'Polygon' || geometry.getType() === 'MultiPolygon');
+
+    let label = '';
+    if (layerData.labelField && isPolygon) {
+      label = formatLabelValue(feature.get(layerData.labelField));
+    }
+
+    let style = cache.get(label);
+    if (!style) {
+      const options = { stroke: stroke };
+      if (fill) options.fill = fill;
+      if (label) {
+        options.text = new ol.style.Text({
+          text: label,
+          font: font,
+          fill: textFill,
+          stroke: textStroke,
+          overflow: true,
+        });
+      }
+      style = new ol.style.Style(options);
+      cache.set(label, style);
+    }
+    return style;
+  };
+}
+
+// 套用使用者調整後的樣式（線粗／顏色／是否填滿／多邊形標籤）。
 export function applyLayerStyle(layerData) {
   if (layerData.isWebGL) {
     layerData.layer.setStyle(flatStyleFor(layerData));
@@ -111,7 +153,7 @@ export function applyLayerStyle(layerData) {
     layerData.source.getFeatures().forEach(f => f.setStyle(null));
     layerData.featureStylesCleared = true;
   }
-  layerData.layer.setStyle(vectorStyleFor(layerData));
+  layerData.layer.setStyle(createCanvasStyleFunction(layerData));
 }
 
 export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
@@ -249,6 +291,12 @@ export function createLayerFromContent(fileName, content, format, visible = true
     return g && (g.getType() === 'Point' || g.getType() === 'MultiPoint');
   });
 
+  // 檢查是否有多邊形圖徵（供屬性標籤使用）
+  const hasPolygons = features.some(f => {
+    const g = f.getGeometry();
+    return g && (g.getType() === 'Polygon' || g.getType() === 'MultiPolygon');
+  });
+
   // 只有 KML 或 KMZ 的點才套用自訂樣式（GPX 點保留原始樣式）
   if (isKmlFormat && hasPoints) {
     const styleFn = createPointStyleFunction(
@@ -315,11 +363,14 @@ export function createLayerFromContent(fileName, content, format, visible = true
     pointLabelField: defaultField,
     availableFields: Array.from(fieldSet),
     hasPoints: hasPoints,
+    hasPolygons: hasPolygons,
     isKmlFormat: isKmlFormat,
     isWebGL: useWebGL,
     strokeColor: strokeColor,
     strokeWidth: strokeWidth,
     fillEnabled: fillEnabled,
+    labelField: '',
+    labelSize: CONFIG.DEFAULT_POINT_LABEL_SIZE,
     styleOverridden: false,
     featureStylesCleared: false,
     settingsExpanded: false,

@@ -21,6 +21,14 @@ import { setWmtsLayer } from './map.js';
 import { handleFiles } from './io.js';
 import { performLocation } from './location.js';
 
+const FIELD_LABELS = {
+  name: '名稱',
+  description: '說明',
+  title: '標題',
+  address: '地址',
+  phoneNumber: '電話',
+};
+
 let pointStyleRaf = null;
 const pendingPointStyleLayers = new Set();
 
@@ -235,6 +243,70 @@ export function renderLayerList() {
       });
       fillLabel.appendChild(fillInput);
       settings.appendChild(fillLabel);
+
+      // 多邊形屬性標籤（線圖層不提供；WebGL 不支援文字）
+      const fields = (layerData.availableFields || []).filter(f => f);
+      if (layerData.hasPolygons && !layerData.isWebGL && fields.length > 0) {
+        const sepLabel = document.createElement('span');
+        sepLabel.className = 'sep';
+        sepLabel.textContent = '｜';
+        settings.appendChild(sepLabel);
+
+        const labelFieldLabel = document.createElement('label');
+        labelFieldLabel.innerHTML = '<span class="settingLabel">標籤</span>';
+        const labelFieldSelect = document.createElement('select');
+        labelFieldSelect.title = '在多邊形上顯示屬性欄位';
+
+        const noneOpt = document.createElement('option');
+        noneOpt.value = '';
+        noneOpt.textContent = '（不顯示）';
+        noneOpt.selected = !layerData.labelField;
+        labelFieldSelect.appendChild(noneOpt);
+
+        fields.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = FIELD_LABELS[f] || f;
+          if (f === layerData.labelField) opt.selected = true;
+          labelFieldSelect.appendChild(opt);
+        });
+
+        labelFieldSelect.addEventListener('change', function() {
+          layerData.labelField = this.value;
+          layerData.styleOverridden = true;
+          scheduleLayerStyleUpdate(layerData);
+          scheduleSaveMapState();
+        });
+
+        labelFieldLabel.appendChild(labelFieldSelect);
+        settings.appendChild(labelFieldLabel);
+
+        const sepFont = document.createElement('span');
+        sepFont.className = 'sep';
+        sepFont.textContent = '｜';
+        settings.appendChild(sepFont);
+
+        const labelSizeLabel = document.createElement('label');
+        labelSizeLabel.innerHTML = '<span class="settingLabel">字體</span>';
+        const labelSizeInput = document.createElement('input');
+        labelSizeInput.type = 'number';
+        labelSizeInput.min = CONFIG.MIN_POINT_LABEL_SIZE;
+        labelSizeInput.max = CONFIG.MAX_POINT_LABEL_SIZE;
+        labelSizeInput.value = layerData.labelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE;
+        labelSizeInput.step = '1';
+        labelSizeInput.title = '多邊形標籤文字大小';
+        labelSizeInput.addEventListener('change', function() {
+          let val = parseInt(this.value) || CONFIG.DEFAULT_POINT_LABEL_SIZE;
+          val = Math.min(Math.max(val, CONFIG.MIN_POINT_LABEL_SIZE), CONFIG.MAX_POINT_LABEL_SIZE);
+          this.value = val;
+          layerData.labelSize = val;
+          layerData.styleOverridden = true;
+          scheduleLayerStyleUpdate(layerData);
+          scheduleSaveMapState();
+        });
+        labelSizeLabel.appendChild(labelSizeInput);
+        settings.appendChild(labelSizeLabel);
+      }
     }
 
     // 點設定（僅 KML/KMZ 且有點圖徵時顯示）
@@ -281,20 +353,13 @@ export function renderLayerList() {
       fieldSelect.title = '選擇要顯示的欄位';
 
       // 只列出圖徵真正擁有的欄位，並以資料表表頭名稱顯示（類似 Google 我的地圖）
-      const fieldLabels = {
-        name: '名稱',
-        description: '說明',
-        title: '標題',
-        address: '地址',
-        phoneNumber: '電話',
-      };
       let allFields = (layerData.availableFields || []).filter(f => f);
       if (allFields.length === 0) allFields = ['name'];
 
       allFields.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f;
-        opt.textContent = fieldLabels[f] || f;
+        opt.textContent = FIELD_LABELS[f] || f;
         if (f === layerData.pointLabelField) opt.selected = true;
         fieldSelect.appendChild(opt);
       });
