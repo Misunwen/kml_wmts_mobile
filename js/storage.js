@@ -114,7 +114,7 @@ function getCurrentMapState() {
       opacity: layerData.opacity !== undefined ? layerData.opacity : CONFIG.DEFAULT_OPACITY,
       pointRadius: layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS,
       pointLabelSize: layerData.pointLabelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE,
-      pointLabelField: layerData.pointLabelField || 'name',
+      pointLabelField: layerData.pointLabelField !== undefined ? layerData.pointLabelField : 'name',
       strokeColor: layerData.strokeColor || null,
       strokeWidth: layerData.strokeWidth || null,
       fillEnabled: !!layerData.fillEnabled,

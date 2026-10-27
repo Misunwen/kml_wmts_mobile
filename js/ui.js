@@ -356,6 +356,12 @@ export function renderLayerList() {
       let allFields = (layerData.availableFields || []).filter(f => f);
       if (allFields.length === 0) allFields = ['name'];
 
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = '（不顯示）';
+      noneOpt.selected = !layerData.pointLabelField;
+      fieldSelect.appendChild(noneOpt);
+
       allFields.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f;

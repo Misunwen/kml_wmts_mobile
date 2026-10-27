@@ -195,17 +195,18 @@ export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
 
     let style = styleCache.get(labelText);
     if (!style) {
-      style = new ol.style.Style({
-        image: image,
-        text: new ol.style.Text({
+      const options = { image: image };
+      if (labelText) {
+        options.text = new ol.style.Text({
           text: labelText,
           offsetY: -(r + 8),
           font: font,
           fill: textFill,
           stroke: textStroke,
           overflow: true,
-        }),
-      });
+        });
+      }
+      style = new ol.style.Style(options);
       styleCache.set(labelText, style);
     }
     return style;
@@ -213,7 +214,7 @@ export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
 }
 
 export function updatePointStyles(layerData) {
-  const field = layerData.pointLabelField || 'name';
+  const field = layerData.pointLabelField !== undefined ? layerData.pointLabelField : 'name';
   const radius = layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS;
   const size = layerData.pointLabelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE;
 
