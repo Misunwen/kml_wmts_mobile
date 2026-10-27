@@ -1,3 +1,59 @@
+const KML_NS = 'http://www.opengis.net/kml/2.2';
+
+function buildKmlDocument(sharedNodes, contentNodes) {
+  const outDoc = document.implementation.createDocument(KML_NS, 'kml', null);
+  const container = outDoc.createElementNS(KML_NS, 'Document');
+  outDoc.documentElement.appendChild(container);
+  sharedNodes.forEach(node => container.appendChild(outDoc.importNode(node, true)));
+  contentNodes.forEach(node => container.appendChild(outDoc.importNode(node, true)));
+  return new XMLSerializer().serializeToString(outDoc);
+}
+
+/**
+ * 若 KML 的 Document 底下有多個頂層 <Folder>，把每個 Folder 拆成獨立且可單獨解析的 KML。
+ * 只有 1 個 Folder（或沒有 Folder）時回傳原文，維持單一圖層行為。
+ * @returns {Array<{name: string, text: string}>}
+ */
+export function splitKmlByFolders(kmlText, fileName) {
+  const fallback = [{ name: fileName, text: kmlText }];
+
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(kmlText, 'application/xml');
+  } catch (error) {
+    return fallback;
+  }
+
+  const root = doc.documentElement;
+  if (!root || root.localName === 'parsererror' ||
+      doc.getElementsByTagName('parsererror').length > 0) {
+    return fallback;
+  }
+
+  const container = Array.from(root.children).find(el => el.localName === 'Document') || root;
+  const children = Array.from(container.children);
+  const shared = children.filter(el => ['Style', 'StyleMap', 'Schema'].includes(el.localName));
+  const folders = children.filter(el => el.localName === 'Folder');
+  const directPlacemarks = children.filter(el => el.localName === 'Placemark');
+
+  if (folders.length < 2 && directPlacemarks.length === 0) {
+    return fallback;
+  }
+
+  const parts = [];
+  folders.forEach((folder, index) => {
+    const nameEl = Array.from(folder.children).find(el => el.localName === 'name');
+    const name = (nameEl && nameEl.textContent.trim()) || `資料夾 ${index + 1}`;
+    parts.push({ name: name, text: buildKmlDocument(shared, [folder]) });
+  });
+
+  if (directPlacemarks.length > 0) {
+    parts.push({ name: fileName, text: buildKmlDocument(shared, directPlacemarks) });
+  }
+
+  return parts;
+}
+
 export function parseGpx(gpxText) {
   const gpxFormat = new ol.format.GPX();
   const features = gpxFormat.readFeatures(gpxText, {

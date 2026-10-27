@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { AppState, DOM } from './state.js';
 import { isValidGisFile, getFileFormat, setStatus, updateProgress } from './utils.js';
-import { parseKmz } from './parsers.js';
+import { parseKmz, splitKmlByFolders } from './parsers.js';
 import { createLayerFromContent, zoomToLayer } from './layers.js';
 
 export function loadSingleFile(file, index, total) {
@@ -48,23 +48,38 @@ export function loadSingleFile(file, index, total) {
           content = decoder.decode(content);
         }
 
-        const layerData = createLayerFromContent(
-          file.name,
-          content,
-          finalFormat,
-          true,
-          false,
-          true
-        );
+        const layerDatas = [];
+
+        if (finalFormat === 'kml') {
+          // 多個頂層資料夾時，一個資料夾一個圖層
+          const parts = splitKmlByFolders(content, file.name);
+          for (const part of parts) {
+            if (AppState.kmlLayers.length >= CONFIG.MAX_LAYERS) {
+              setStatus(`已達 ${CONFIG.MAX_LAYERS} 個圖層上限，略過剩餘資料夾。`, 'warn');
+              break;
+            }
+            try {
+              layerDatas.push(createLayerFromContent(part.name, part.text, 'kml', true, false, true));
+            } catch (partError) {
+              console.warn(`略過無資料的資料夾：${part.name}`, partError);
+            }
+          }
+          if (layerDatas.length === 0) {
+            throw new Error('沒有讀到可用的圖徵資料。');
+          }
+        } else {
+          layerDatas.push(createLayerFromContent(file.name, content, finalFormat, true, false, true));
+        }
 
         updateProgress(index, total, file.name);
 
-        const featureCount = layerData.source.getFeatures().length;
+        const featureCount = layerDatas.reduce((sum, layerData) => sum + layerData.source.getFeatures().length, 0);
         const typeLabel = finalFormat.toUpperCase();
-        const accel = layerData.isWebGL ? '（WebGL 加速）' : '';
-        setStatus(`已載入：${file.name} (${typeLabel})${accel}，共 ${featureCount} 個圖徵。`);
+        const accel = layerDatas.some(layerData => layerData.isWebGL) ? '（WebGL 加速）' : '';
+        const splitNote = layerDatas.length > 1 ? `，分成 ${layerDatas.length} 個圖層` : '';
+        setStatus(`已載入：${file.name} (${typeLabel})${accel}${splitNote}，共 ${featureCount} 個圖徵。`);
 
-        resolve(layerData);
+        resolve(layerDatas);
 
       } catch (error) {
         console.error(error);
@@ -113,8 +128,8 @@ export async function handleFiles(files) {
   const total = loadFiles.length;
 
   for (let i = 0; i < total; i++) {
-    const result = await loadSingleFile(loadFiles[i], i + 1, total);
-    if (result) loadedCount++;
+          const result = await loadSingleFile(loadFiles[i], i + 1, total);
+          if (result && result.length > 0) loadedCount++;
   }
 
   updateProgress(total, total, '完成！');
