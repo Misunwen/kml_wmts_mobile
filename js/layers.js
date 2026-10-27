@@ -234,7 +234,8 @@ export function createLayerFromContent(fileName, content, format, visible = true
     const keys = f.getKeys();
     keys.forEach(k => fieldSet.add(k));
   });
-  fieldSet.delete('geometry');
+  // 排除幾何與 KML 內部欄位，只留下真正的資料欄位（表頭）
+  ['geometry', 'styleUrl', 'styleHash', 'styleMapHash'].forEach(key => fieldSet.delete(key));
 
   const defaultField = fieldSet.has('name') ? 'name' :
     fieldSet.has('description') ? 'description' :

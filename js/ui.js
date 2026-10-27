@@ -280,14 +280,21 @@ export function renderLayerList() {
       const fieldSelect = document.createElement('select');
       fieldSelect.title = '選擇要顯示的欄位';
 
-      const fieldOptions = ['name', 'description', 'title', '標題'];
-      const available = layerData.availableFields || [];
-      const allFields = [...new Set([...fieldOptions, ...available])].filter(f => f);
+      // 只列出圖徵真正擁有的欄位，並以資料表表頭名稱顯示（類似 Google 我的地圖）
+      const fieldLabels = {
+        name: '名稱',
+        description: '說明',
+        title: '標題',
+        address: '地址',
+        phoneNumber: '電話',
+      };
+      let allFields = (layerData.availableFields || []).filter(f => f);
+      if (allFields.length === 0) allFields = ['name'];
 
       allFields.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f;
-        opt.textContent = f;
+        opt.textContent = fieldLabels[f] || f;
         if (f === layerData.pointLabelField) opt.selected = true;
         fieldSelect.appendChild(opt);
       });
