@@ -9,6 +9,17 @@ function createTextKey() {
   return 't' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
+// OpenLayers 在圖層移出地圖時就會釋放 WebGL helper，之後再呼叫 dispose()
+// 可能在清理 buffer 時讀到已刪除的 helper 而丟錯；此處安全忽略。
+function disposeLayer(layerData) {
+  if (!layerData.isWebGL || typeof layerData.layer.dispose !== 'function') return;
+  try {
+    layerData.layer.dispose();
+  } catch (error) {
+    console.debug('WebGL 圖層 helper 已於移除時釋放：', error.message);
+  }
+}
+
 function rgbToHex(r, g, b) {
   const h = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
   return '#' + h(r) + h(g) + h(b);
@@ -413,9 +424,10 @@ export function removeKmlLayer(id) {
   if (index === -1) return;
 
   const layerData = AppState.kmlLayers[index];
-  AppState.map.removeLayer(layerData.layer);
-  if (layerData.isWebGL && typeof layerData.layer.dispose === 'function') {
-    layerData.layer.dispose();
+  try {
+    AppState.map.removeLayer(layerData.layer);
+  } finally {
+    disposeLayer(layerData);
   }
   AppState.kmlLayers.splice(index, 1);
   deleteLayerText(layerData).catch(error => console.warn('圖層文字刪除失敗：', error));
@@ -445,9 +457,12 @@ export function moveKmlLayer(id, direction) {
 
 export function clearCurrentLayers() {
   AppState.kmlLayers.forEach(layerData => {
-    AppState.map.removeLayer(layerData.layer);
-    if (layerData.isWebGL && typeof layerData.layer.dispose === 'function') {
-      layerData.layer.dispose();
+    try {
+      AppState.map.removeLayer(layerData.layer);
+    } catch (error) {
+      console.warn('移除圖層失敗：', layerData.name, error);
+    } finally {
+      disposeLayer(layerData);
     }
     deleteLayerText(layerData).catch(error => console.warn('圖層文字刪除失敗：', error));
   });
