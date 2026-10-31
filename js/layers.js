@@ -168,7 +168,7 @@ export function applyLayerStyle(layerData) {
 }
 
 export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
-  const r = Math.min(Math.max(radius || CONFIG.DEFAULT_POINT_RADIUS, CONFIG.MIN_POINT_RADIUS), CONFIG.MAX_POINT_RADIUS);
+  const r = Math.min(Math.max(radius !== undefined && radius !== null ? radius : CONFIG.DEFAULT_POINT_RADIUS, CONFIG.MIN_POINT_RADIUS), CONFIG.MAX_POINT_RADIUS);
   const size = Math.min(Math.max(fontSize || CONFIG.DEFAULT_POINT_LABEL_SIZE, CONFIG.MIN_POINT_LABEL_SIZE),
   CONFIG.MAX_POINT_LABEL_SIZE);
 
@@ -226,7 +226,7 @@ export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
 
 export function updatePointStyles(layerData) {
   const field = layerData.pointLabelField !== undefined ? layerData.pointLabelField : 'name';
-  const radius = layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS;
+  const radius = layerData.pointRadius !== undefined ? layerData.pointRadius : CONFIG.DEFAULT_POINT_RADIUS;
   const size = layerData.pointLabelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE;
 
   const styleFn = createPointStyleFunction(field, radius, size);

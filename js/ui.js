@@ -29,6 +29,15 @@ const FIELD_LABELS = {
   phoneNumber: '電話',
 };
 
+function createStepButton(label, handler) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'stepBtn';
+  btn.textContent = label;
+  btn.addEventListener('click', handler);
+  return btn;
+}
+
 let pointStyleRaf = null;
 const pendingPointStyleLayers = new Set();
 
@@ -179,7 +188,8 @@ export function renderLayerList() {
       sepStroke.textContent = '｜';
       settings.appendChild(sepStroke);
 
-      const widthLabel = document.createElement('label');
+      const widthLabel = document.createElement('span');
+      widthLabel.className = 'settingRow';
       widthLabel.innerHTML = '<span class="settingLabel">線粗</span>';
       const widthRange = document.createElement('input');
       widthRange.type = 'range';
@@ -191,16 +201,22 @@ export function renderLayerList() {
       widthValue.className = 'sizeValue';
       widthValue.textContent = widthRange.value + 'px';
 
-      widthRange.addEventListener('input', function() {
-        const val = parseInt(this.value);
+      const setWidth = (raw) => {
+        let val = parseInt(raw);
+        if (Number.isNaN(val)) val = CONFIG.DEFAULT_STROKE_WIDTH;
+        val = Math.min(Math.max(val, CONFIG.MIN_STROKE_WIDTH), CONFIG.MAX_STROKE_WIDTH);
+        widthRange.value = String(val);
         widthValue.textContent = val + 'px';
         layerData.strokeWidth = val;
         layerData.styleOverridden = true;
         scheduleLayerStyleUpdate(layerData);
         scheduleSaveMapState();
-      });
+      };
 
+      widthRange.addEventListener('input', () => setWidth(widthRange.value));
+      widthLabel.appendChild(createStepButton('−', () => setWidth(layerData.strokeWidth - 1)));
       widthLabel.appendChild(widthRange);
+      widthLabel.appendChild(createStepButton('+', () => setWidth(layerData.strokeWidth + 1)));
       widthLabel.appendChild(widthValue);
       settings.appendChild(widthLabel);
 
@@ -286,7 +302,8 @@ export function renderLayerList() {
         sepFont.textContent = '｜';
         settings.appendChild(sepFont);
 
-        const labelSizeLabel = document.createElement('label');
+        const labelSizeLabel = document.createElement('span');
+        labelSizeLabel.className = 'settingRow';
         labelSizeLabel.innerHTML = '<span class="settingLabel">字體</span>';
         const labelSizeInput = document.createElement('input');
         labelSizeInput.type = 'number';
@@ -295,16 +312,22 @@ export function renderLayerList() {
         labelSizeInput.value = layerData.labelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE;
         labelSizeInput.step = '1';
         labelSizeInput.title = '多邊形標籤文字大小';
-        labelSizeInput.addEventListener('change', function() {
-          let val = parseInt(this.value) || CONFIG.DEFAULT_POINT_LABEL_SIZE;
+
+        const setLabelSize = (raw) => {
+          let val = parseInt(raw);
+          if (Number.isNaN(val)) val = CONFIG.DEFAULT_POINT_LABEL_SIZE;
           val = Math.min(Math.max(val, CONFIG.MIN_POINT_LABEL_SIZE), CONFIG.MAX_POINT_LABEL_SIZE);
-          this.value = val;
+          labelSizeInput.value = val;
           layerData.labelSize = val;
           layerData.styleOverridden = true;
           scheduleLayerStyleUpdate(layerData);
           scheduleSaveMapState();
-        });
+        };
+
+        labelSizeInput.addEventListener('change', () => setLabelSize(labelSizeInput.value));
+        labelSizeLabel.appendChild(createStepButton('−', () => setLabelSize(layerData.labelSize - 1)));
         labelSizeLabel.appendChild(labelSizeInput);
+        labelSizeLabel.appendChild(createStepButton('+', () => setLabelSize(layerData.labelSize + 1)));
         settings.appendChild(labelSizeLabel);
       }
     }
@@ -317,27 +340,34 @@ export function renderLayerList() {
       settings.appendChild(sep1);
 
       // 點標記大小
-      const radiusLabel = document.createElement('label');
+      const radiusLabel = document.createElement('span');
+      radiusLabel.className = 'settingRow';
       radiusLabel.innerHTML = '<span class="settingLabel">標記</span>';
       const radiusRange = document.createElement('input');
       radiusRange.type = 'range';
       radiusRange.min = String(CONFIG.MIN_POINT_RADIUS);
       radiusRange.max = String(CONFIG.MAX_POINT_RADIUS);
-      radiusRange.value = String(layerData.pointRadius || CONFIG.DEFAULT_POINT_RADIUS);
+      radiusRange.value = String(layerData.pointRadius !== undefined ? layerData.pointRadius : CONFIG.DEFAULT_POINT_RADIUS);
       radiusRange.step = '1';
       const radiusValue = document.createElement('span');
       radiusValue.className = 'sizeValue';
       radiusValue.textContent = radiusRange.value + 'px';
 
-      radiusRange.addEventListener('input', function() {
-        const val = parseInt(this.value);
+      const setRadius = (raw) => {
+        let val = parseInt(raw);
+        if (Number.isNaN(val)) val = CONFIG.DEFAULT_POINT_RADIUS;
+        val = Math.min(Math.max(val, CONFIG.MIN_POINT_RADIUS), CONFIG.MAX_POINT_RADIUS);
+        radiusRange.value = String(val);
         radiusValue.textContent = val + 'px';
         layerData.pointRadius = val;
         schedulePointStyleUpdate(layerData);
         scheduleSaveMapState();
-      });
+      };
 
+      radiusRange.addEventListener('input', () => setRadius(radiusRange.value));
+      radiusLabel.appendChild(createStepButton('−', () => setRadius(layerData.pointRadius - 1)));
       radiusLabel.appendChild(radiusRange);
+      radiusLabel.appendChild(createStepButton('+', () => setRadius(layerData.pointRadius + 1)));
       radiusLabel.appendChild(radiusValue);
       settings.appendChild(radiusLabel);
 
@@ -393,7 +423,8 @@ export function renderLayerList() {
       settings.appendChild(sep3);
 
       // 標籤文字大小
-      const sizeLabel = document.createElement('label');
+      const sizeLabel = document.createElement('span');
+      sizeLabel.className = 'settingRow';
       sizeLabel.innerHTML = '<span class="settingLabel">字體</span>';
       const sizeInput = document.createElement('input');
       sizeInput.type = 'number';
@@ -401,18 +432,22 @@ export function renderLayerList() {
       sizeInput.max = CONFIG.MAX_POINT_LABEL_SIZE;
       sizeInput.value = layerData.pointLabelSize || CONFIG.DEFAULT_POINT_LABEL_SIZE;
       sizeInput.step = '1';
-      sizeInput.title = '標籤文字大小 (8~28)';
+      sizeInput.title = '標籤文字大小 (5~28)';
 
-      sizeInput.addEventListener('change', function() {
-        let val = parseInt(this.value) || CONFIG.DEFAULT_POINT_LABEL_SIZE;
+      const setSize = (raw) => {
+        let val = parseInt(raw);
+        if (Number.isNaN(val)) val = CONFIG.DEFAULT_POINT_LABEL_SIZE;
         val = Math.min(Math.max(val, CONFIG.MIN_POINT_LABEL_SIZE), CONFIG.MAX_POINT_LABEL_SIZE);
-        this.value = val;
+        sizeInput.value = val;
         layerData.pointLabelSize = val;
-        updatePointStyles(layerData);
+        schedulePointStyleUpdate(layerData);
         scheduleSaveMapState();
-      });
+      };
 
+      sizeInput.addEventListener('change', () => setSize(sizeInput.value));
+      sizeLabel.appendChild(createStepButton('−', () => setSize(layerData.pointLabelSize - 1)));
       sizeLabel.appendChild(sizeInput);
+      sizeLabel.appendChild(createStepButton('+', () => setSize(layerData.pointLabelSize + 1)));
       settings.appendChild(sizeLabel);
     }
 
