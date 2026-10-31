@@ -1,6 +1,6 @@
 # KML / KMZ / GPX + NLSC WMTS 地圖檢視器
 
-以 **OpenLayers** 開發的純前端地圖工具，手機優先，支援載入、檢視與管理 **KML / KMZ / GPX** 地理資料，並結合 **國土測繪中心（NLSC）WMTS** 底圖。
+以 **OpenLayers** 開發的純前端地圖工具，手機優先，支援載入、檢視與管理 **KML / KMZ / GPX** 地理資料，並結合 **NLSC_WMTS** 底圖。
 
 - 線上（GitHub Pages）：https://misunwen.github.io/kml_wmts_mobile/
 - 版本：`CONFIG.APP_VERSION`（顯示於面板標題列，目前 **v2026.10.02.8**）
