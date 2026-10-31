@@ -12,7 +12,7 @@
 
 - `CONFIG.APP_VERSION`：**2026.10.02.8**（顯示於面板標題列 `v2026.10.02.8`）
 - 手機已確認載到 **v2026.10.02.8**（無痕驗證通過）
-- 基準 HEAD（本次文件變更前）：`1ef92ed docs: add AGENTS rules, CHANGELOG, and refresh HANDOFF`
+- 基準 HEAD（本次文件變更前）：`3089636 docs: mark v2026.10.02.8 verified on mobile`
 - 應用程式版本 commit：`d7298c6 feat: 0px markers, 5px labels, and +/- steppers for mobile`
 - 本次文件／決策變更會再形成一個 commit。
   **接手時請執行 `git rev-parse --short HEAD` 與 `git status` 確認實際狀態。**
@@ -23,6 +23,7 @@
 ## 2. 本次變更內容與進度表
 
 ### 本次（文件／流程）
+- 更新 `README.md`：改寫為目前架構與功能（ES Modules、WebGL、多資料夾拆層、樣式控制、縮放限制、本機執行方式）。
 - 新增 `AGENTS.md`：版本遞增、CHANGELOG／HANDOFF 規則、發布檢查清單、雷區。
 - 建立 `CHANGELOG.md`，回填 `.1`–`.8` 與前置重構／效能記錄。
 - 重寫 `HANDOFF.md`（本檔）。
