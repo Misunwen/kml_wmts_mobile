@@ -4,3 +4,10 @@
 
 # 本機啟動腳本
 start_server.bat
+
+# 交接／規則／版本記錄：只留本機，不上傳
+AGENTS.md
+CHANGELOG.md
+HANDOFF.md
+
+# 註：README.md 只在使用者明確要求時才更新並上傳
