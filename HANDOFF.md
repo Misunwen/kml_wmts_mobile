@@ -11,8 +11,9 @@
 ## 1. 目前版本、git 狀態與 HEAD
 
 - `CONFIG.APP_VERSION`：**2026.10.02.8**（顯示於面板標題列 `v2026.10.02.8`）
-- 基準 HEAD（本次文件變更前）：`d7298c6 feat: 0px markers, 5px labels, and +/- steppers for mobile`
-- 本次文件／規則變更（`AGENTS.md`、`CHANGELOG.md`、`HANDOFF.md`）會再形成一個 commit。
+- 基準 HEAD（本次文件變更前）：`1ef92ed docs: add AGENTS rules, CHANGELOG, and refresh HANDOFF`
+- 應用程式版本 commit：`d7298c6 feat: 0px markers, 5px labels, and +/- steppers for mobile`
+- 本次文件／決策變更會再形成一個 commit。
   **接手時請執行 `git rev-parse --short HEAD` 與 `git status` 確認實際狀態。**
 - 預期 `git status`：文件 commit 後應為 clean（資料檔已被 `.gitignore` 忽略）。
 
@@ -42,7 +43,7 @@
 | 清除快取 WebGL `deleteBuffer` 錯誤修正 | ✅ |
 | 縮放上限：手動 22、定位 20 | ✅ |
 | 標記最小 0px、字體最小 5px、`−`/`+` 按鈕 | ✅（待手機驗證） |
-| 距離／面積測量 | ⬜ 未開始 |
+| 距離／面積測量 | ⛔ 不做（使用者決定取消） |
 | 屬性搜尋並定位 | ⏸ 使用者暫緩 |
 
 ---
@@ -66,13 +67,12 @@
 
 ## 4. 下一步待辦
 
+> **距離／面積測量：使用者已決定「不做」**，不需再提議或實作。
+
 1. **等使用者手機驗證 v2026.10.02.8**（標記 0px、字體 5px、`−`/`+` 按鈕）。
-2. 實作**距離／面積測量**（建議先給簡短設計再動手）：
-   - `ol.interaction.Draw`（LineString / Polygon）
-   - 顯示距離 m/km、面積 m²/公頃
-   - 可清除測量結果
-3. 屬性搜尋（使用者暫緩；若要做：跨圖層、全部欄位、包含比對、列出結果並定位）。
-4. 之後每次改版依 `AGENTS.md` 的流程：bump 版本 → CHANGELOG → HANDOFF → commit/push → 無痕驗證。
+2. 屬性搜尋（使用者暫緩；若要做：跨圖層、全部欄位、包含比對、列出結果並定位）。
+3. 之後每次改版依 `AGENTS.md` 的流程：bump 版本 → CHANGELOG → HANDOFF → commit/push → 無痕驗證。
+4. 若使用者提出新功能，先給簡短設計並取得同意（bounded 流程）再實作。
 
 ---
 
