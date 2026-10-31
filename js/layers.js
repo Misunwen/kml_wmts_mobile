@@ -66,6 +66,13 @@ function analyzeStyles(features, resolution) {
   let signature = null;
 
   for (const feature of features) {
+    const geometry = feature.getGeometry();
+    const type = geometry && geometry.getType();
+    if (type !== 'LineString' && type !== 'MultiLineString' &&
+        type !== 'Polygon' && type !== 'MultiPolygon') {
+      continue;
+    }
+
     const style = resolveFeatureStyle(feature, resolution);
     if (!style) { result.uniform = false; return result; }
 
@@ -159,12 +166,17 @@ export function applyLayerStyle(layerData) {
     layerData.layer.setStyle(flatStyleFor(layerData));
     return;
   }
-  // canvas：需先清除圖徵自帶樣式，圖層樣式才會生效（會統一成單一顏色）。
-  if (!layerData.featureStylesCleared) {
-    layerData.source.getFeatures().forEach(f => f.setStyle(null));
-    layerData.featureStylesCleared = true;
-  }
-  layerData.layer.setStyle(createCanvasStyleFunction(layerData));
+  // 只套用到線/多邊形圖徵，避免影響混合圖層（例如同時有航點的 GPX）中的點。
+  const styleFn = createCanvasStyleFunction(layerData);
+  layerData.source.getFeatures().forEach(feature => {
+    const geometry = feature.getGeometry();
+    const type = geometry && geometry.getType();
+    if (type === 'LineString' || type === 'MultiLineString' ||
+        type === 'Polygon' || type === 'MultiPolygon') {
+      feature.setStyle(styleFn);
+    }
+  });
+  layerData.layer.changed();
 }
 
 export function createPointStyleFunction(fieldOrFn, radius, fontSize) {
@@ -309,6 +321,13 @@ export function createLayerFromContent(fileName, content, format, visible = true
     return g && (g.getType() === 'Polygon' || g.getType() === 'MultiPolygon');
   });
 
+  // 檢查是否有線圖徵；線或面任一存在就提供線/面樣式控制
+  const hasLines = features.some(f => {
+    const g = f.getGeometry();
+    return g && (g.getType() === 'LineString' || g.getType() === 'MultiLineString');
+  });
+  const hasStrokeGeometry = hasLines || hasPolygons;
+
   // 只有 KML 或 KMZ 的點才套用自訂樣式（GPX 點保留原始樣式）
   if (isKmlFormat && hasPoints) {
     const styleFn = createPointStyleFunction(
@@ -329,7 +348,7 @@ export function createLayerFromContent(fileName, content, format, visible = true
 
   // 非點圖層：分析樣式，取統一樣式作為預設線色/線粗/填滿，並判斷是否可用 WebGL。
   const resolution = AppState.view ? AppState.view.getResolution() : 1;
-  const styleInfo = hasPoints ? null : analyzeStyles(features, resolution);
+  const styleInfo = hasStrokeGeometry ? analyzeStyles(features, resolution) : null;
   const strokeColor = (styleInfo && styleInfo.strokeColor) || CONFIG.DEFAULT_STROKE_COLOR;
   const strokeWidth = (styleInfo && styleInfo.strokeWidth) || CONFIG.DEFAULT_STROKE_WIDTH;
   const fillEnabled = !!(styleInfo && styleInfo.hasFill);
@@ -376,6 +395,8 @@ export function createLayerFromContent(fileName, content, format, visible = true
     availableFields: Array.from(fieldSet),
     hasPoints: hasPoints,
     hasPolygons: hasPolygons,
+    hasLines: hasLines,
+    hasStrokeGeometry: hasStrokeGeometry,
     isKmlFormat: isKmlFormat,
     isWebGL: useWebGL,
     strokeColor: strokeColor,
@@ -384,7 +405,6 @@ export function createLayerFromContent(fileName, content, format, visible = true
     labelField: '',
     labelSize: CONFIG.DEFAULT_POINT_LABEL_SIZE,
     styleOverridden: false,
-    featureStylesCleared: false,
     settingsExpanded: false,
   };
 

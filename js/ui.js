@@ -181,8 +181,8 @@ export function renderLayerList() {
     opacityLabel.appendChild(opacityValue);
     settings.appendChild(opacityLabel);
 
-    // 線/面圖層樣式（線粗、顏色、是否填滿）
-    if (!layerData.hasPoints) {
+    // 線/面圖層樣式（線粗、顏色、是否填滿）——只要含線或多邊形就顯示
+    if (layerData.hasStrokeGeometry) {
       const sepStroke = document.createElement('span');
       sepStroke.className = 'sep';
       sepStroke.textContent = '｜';
