@@ -1,5 +1,7 @@
 # 資料檔（僅本機測試使用，不上傳）
 *.kml
+*.gpx
+References/
 .backup/
 
 # 本機啟動腳本
