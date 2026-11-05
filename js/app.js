@@ -79,7 +79,7 @@ async function restoreSavedMapState(savedState) {
             applyLayerStyle(layerData);
           }
 
-          if (layerData.isKmlFormat && layerData.hasPoints) {
+          if (layerData.hasPoints) {
             updatePointStyles(layerData);
           }
 

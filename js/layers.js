@@ -328,8 +328,8 @@ export function createLayerFromContent(fileName, content, format, visible = true
   });
   const hasStrokeGeometry = hasLines || hasPolygons;
 
-  // 只有 KML 或 KMZ 的點才套用自訂樣式（GPX 點保留原始樣式）
-  if (isKmlFormat && hasPoints) {
+  // 有點圖徵就套用自訂樣式（KML 與 GPX 皆可編輯點）
+  if (hasPoints) {
     const styleFn = createPointStyleFunction(
       defaultField,
       CONFIG.DEFAULT_POINT_RADIUS,

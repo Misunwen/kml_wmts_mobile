@@ -332,8 +332,8 @@ export function renderLayerList() {
       }
     }
 
-    // 點設定（僅 KML/KMZ 且有點圖徵時顯示）
-    if (layerData.isKmlFormat && layerData.hasPoints) {
+    // 點設定（有點圖徵就顯示；KML 與 GPX 皆可編輯）
+    if (layerData.hasPoints) {
       const sep1 = document.createElement('span');
       sep1.className = 'sep';
       sep1.textContent = '｜';
